@@ -1,0 +1,92 @@
+{
+  "theme": "light",
+  "archetype": "4 (Swiss & High-Contrast)",
+  "design_philosophy": "Objective, rigid, and functional. An algorithmic, international translator. Heavy use of visible grids, stark white backgrounds, stark black text, and International Klein Blue for interactions. Tension is created through extreme contrast and strict grid alignments, not through decorative elements.",
+  "colors": {
+    "background": "#FAFAFA",
+    "foreground": "#0A0A0A",
+    "primary": "#0033FF",
+    "primary_foreground": "#FFFFFF",
+    "secondary": "#E5E5E5",
+    "secondary_foreground": "#0A0A0A",
+    "accent": "#FF3B30",
+    "accent_foreground": "#FFFFFF",
+    "muted": "#F5F5F5",
+    "muted_foreground": "#737373",
+    "border": "#0A0A0A",
+    "ring": "#0033FF"
+  },
+  "typography": {
+    "font_families": {
+      "heading": "Cabinet Grotesk, sans-serif",
+      "body": "IBM Plex Sans, sans-serif",
+      "mono": "IBM Plex Mono, monospace"
+    },
+    "scales": {
+      "h1": "text-4xl sm:text-5xl lg:text-6xl tracking-tighter font-black",
+      "h2": "text-2xl sm:text-3xl lg:text-4xl tracking-tight font-bold",
+      "h3": "text-xl sm:text-2xl tracking-tight font-semibold",
+      "body": "text-base leading-relaxed",
+      "mono_input": "text-lg sm:text-xl font-mono leading-relaxed",
+      "label": "text-xs tracking-[0.2em] uppercase font-bold"
+    }
+  },
+  "layout_and_spacing": {
+    "spacing_scale": "Generous spacing. Use p-6, p-8, p-12 for containers. Containers with borders MUST have p-6 or p-8 padding.",
+    "grid_system": "Control Room Grid (Dense, Data Correlation). Every pixel utilized. Subgrids and visible borders (Grid Borders technical look) between translation panels.",
+    "alignment": "Strictly left-aligned text. No center alignment unless it's a specific empty state or massive hero text.",
+    "borders": "Expose the skeleton. 1px solid #0A0A0A borders on all structural elements, cards, and panels."
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-primary text-white rounded-none border border-black hover:bg-black hover:text-white transition-colors duration-200",
+      "secondary": "bg-transparent border border-black text-black hover:bg-black hover:text-white transition-colors duration-200"
+    },
+    "cards": {
+      "style": "Flat background, sharp corners (rounded-none), 1px solid black border, no shadow or hard 4px 4px 0px black shadow on hover."
+    },
+    "inputs": {
+      "style": "Flat, 1px solid black border, focus:ring-2 focus:ring-primary focus:outline-none rounded-none p-4 font-mono text-lg bg-transparent"
+    },
+    "navigation": {
+      "style": "Visible navigation bar with solid bottom border (1px solid black). Links must be visible on desktop."
+    }
+  },
+  "media": {
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1705339613128-28b8d900fb52?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHwyfHxhYnN0cmFjdCUyMGNvbW11bmljYXRpb24lMjBnbG9iZXxlbnwwfHx8fDE3NzYzNTk5MDJ8MA&ixlib=rb-4.1.0&q=85",
+        "category": "hero_background",
+        "description": "Stylized image of a person standing in front of a globe, used for welcome screen or empty state backgrounds."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1675015989087-562d52d254f8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGNvbW11bmljYXRpb24lMjBnbG9iZXxlbnwwfHx8fDE3NzYzNTk5MDJ8MA&ixlib=rb-4.1.0&q=85",
+        "category": "empty_state",
+        "description": "Close up of a white globe with a blue background, used for translation history empty states."
+      }
+    ],
+    "icons": {
+      "library": "@phosphor-icons/react",
+      "style": "Duotone or bold weights to match the high-contrast Swiss typography. Avoid thin, wispy icons."
+    }
+  },
+  "interactions_and_motion": {
+    "hover_states": "Harsh, immediate color flips (e.g., white background to black background, text color inverts). No soft fading. 0.1s transition.",
+    "focus_states": "High contrast ring. focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none.",
+    "animations": "Minimalist. Staggered list entrances for translation history. Micro-interactions for the recording pulse (Signal Red)."
+  },
+  "accessibility": {
+    "contrast": "All text must pass WCAG AAA (black on white, or white on primary blue).",
+    "aria": "All buttons must have aria-labels, especially icon-only buttons like mic or swap languages.",
+    "test_ids": "All interactive elements MUST include data-testid attribute in kebab-case (e.g., data-testid='translate-button')."
+  },
+  "instructions_to_main_agent": [
+    "Build the UI using React, Tailwind CSS, and Shadcn components, but heavily customize Shadcn to remove rounded corners and soft shadows. Apply `rounded-none`, `border-black`, and `border` to everything.",
+    "For the translation panels, use a split-screen or side-by-side bento grid layout with a prominent visible border between the source and target languages.",
+    "Use Phosphor Icons for the UI elements (mic, swap, upload, play). Install via `yarn add @phosphor-icons/react`.",
+    "Ensure the fonts (Cabinet Grotesk, IBM Plex Sans, IBM Plex Mono) are imported via Google Fonts or Fontshare CDN (`@import url('https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@900,800,700,500,400&display=swap');`) in the index.css or global css.",
+    "The Sign Language to Text feature should have an explicit dropzone with a stark, dashed black border and a prominent upload icon.",
+    "The Voice translation should feature a highly visible, high-contrast Red button for recording state.",
+    "Implement tab-based navigation as brutalist, flat folder tabs with hard borders, not standard pill-shaped Shadcn tabs."
+  ]
+}
