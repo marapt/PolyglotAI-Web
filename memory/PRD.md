@@ -1,61 +1,77 @@
-# Polyglot AI - Universal Translation App PRD
+# Polyglot AI - Universal Translation Platform PRD
 
 ## Original Problem Statement
-User wanted to recover their Polyglot AI project from a previous Emergent session (https://where-my-code.preview.emergentagent.com/) which had expired. The project was originally built with Expo/React Native (mobile) frontend and FastAPI backend. Source code was found on GitHub: https://github.com/marapt/Emergent-Universal-Translation-APP
+User wanted to recover their Polyglot AI project from a previous Emergent session. Source code was found on GitHub: https://github.com/marapt/Emergent-Universal-Translation-APP. Originally built with Expo/React Native, rebuilt as a React web app. Then enhanced with integration capabilities (API, WhatsApp, Phone, Chrome Extension, Widget) and a product capabilities landing page.
 
 ## Architecture
 - **Backend**: FastAPI + MongoDB + OpenAI (via emergentintegrations library)
 - **Frontend**: React 19 + Tailwind CSS + Phosphor Icons
-- **Database**: MongoDB (translations, voice_translations, sign_interpretations, text_to_sign collections)
-- **AI Integration**: OpenAI GPT-4o-mini (text translation, sign description), GPT-4o (vision/sign interpretation), Whisper (speech-to-text), TTS-1 (text-to-speech)
+- **Database**: MongoDB (translations, voice_translations, sign_interpretations, text_to_sign, api_keys, whatsapp_translations, call_translations)
+- **AI Integration**: OpenAI GPT-4o-mini (text), GPT-4o (vision), Whisper (STT), TTS-1 (TTS)
 - **Key**: Emergent LLM Universal Key
 
 ## User Personas
 - Language learners needing quick translations
-- Travelers needing voice translation
+- Travelers needing voice/phone translation
 - Deaf/hard-of-hearing users needing sign language tools
-- Educators teaching sign language
+- Developers integrating translation into their apps
+- Businesses wanting WhatsApp/website translation
 
 ## Core Requirements
 1. Text Translation (100+ languages)
-2. Voice Translation (record → transcribe → translate → TTS playback)
-3. Sign Language to Text (upload image → AI interpretation)
-4. Text to Sign Language (text → step-by-step signing instructions, 8 sign languages)
+2. Voice Translation (record, transcribe, translate, TTS playback)
+3. Sign Language to Text (upload image, AI interpretation)
+4. Text to Sign Language (8 sign languages, step-by-step)
 5. Translation History (persisted in MongoDB)
+6. Public REST API with key authentication
+7. WhatsApp bot integration (Twilio webhook)
+8. Phone call translation (Twilio Voice webhook)
+9. Embeddable JS widget for websites
+10. Chrome extension for webpage translation
 
-## What's Been Implemented (April 16, 2026)
-- Full backend with 7 API endpoints (/api/, /api/translate, /api/voice-translate, /api/sign-to-text, /api/text-to-sign, /api/history, /api/supported-languages)
-- Full React web frontend rebuilt from original Expo/React Native codebase
-- **UI Redesign (Iteration 2)**: Modern, sleek design matching original mobile app screenshots
-  - Plus Jakarta Sans font, JetBrains Mono for code
-  - Indigo accent (#4F46E5), soft shadows, rounded-2xl corners
-  - Bottom tab navigation (mobile-style)
-  - Card-based layout with soft borders and hover effects
-  - Large circular mic button for voice recording
-  - "Take Photo" / "Choose from Gallery" buttons for sign language
-  - Info banners with light indigo background
-- Web MediaRecorder API for voice recording (replacing Expo Audio)
-- File upload/drag-drop for sign language images (replacing Expo Camera)
-- All features tested and passing (12/12 backend tests, all UI tests) across 2 iterations
+## What's Been Implemented
+
+### Iteration 1 (April 16, 2026) - Core App
+- Full backend with 7 API endpoints
+- React web frontend rebuilt from Expo/React Native
+
+### Iteration 2 (April 16, 2026) - UI Redesign
+- Modern sleek design matching original mobile app screenshots
+- Plus Jakarta Sans font, rounded corners, soft shadows, bottom tab nav
+
+### Iteration 3 (April 16, 2026) - Integrations & Landing Page
+- Product capabilities landing page with bento-grid showcase (Translator, Voice, Messages, Documents, API)
+- Stats bar (100+ languages, 8 sign languages, 5+ integrations, <2s latency)
+- Public REST API with API key generation and authentication (POST /api/v1/translate)
+- API key management (generate, list, mask)
+- Embeddable widget documentation and code
+- Chrome extension code (manifest.json + content.js)
+- WhatsApp webhook endpoint (/api/webhooks/whatsapp) - ready for Twilio
+- Phone call webhook endpoint (/api/webhooks/voice) - ready for Twilio
+- API documentation endpoint (/api/docs/endpoints)
+- Integrations page with 5 sub-sections (REST API, Widget, Chrome Extension, WhatsApp, Phone Calls)
+- All 18 backend tests passing, all frontend UI tests passing
 
 ## Prioritized Backlog
 ### P0 (Done)
-- [x] Text translation with language picker and swap
-- [x] Voice translation with recording and playback
-- [x] Sign language to text with image upload
-- [x] Text to sign language converter
+- [x] Text, Voice, Sign Language translation
 - [x] Translation history
+- [x] Landing page with capabilities showcase
+- [x] Public API with key auth
+- [x] WhatsApp & Phone webhooks
+- [x] Widget & Chrome extension documentation
 
 ### P1 (Next)
-- [ ] Settings page (API key management for premium features)
-- [ ] Copy to clipboard buttons for translations
-- [ ] Bookmark/favorite translations
+- [ ] Connect Twilio for live WhatsApp/Phone testing
+- [ ] Build actual Chrome extension package (downloadable .zip)
+- [ ] Build working widget.js hosted endpoint
+- [ ] Add copy-to-clipboard for translations
+- [ ] Dark mode toggle
 
 ### P2 (Future)
-- [ ] Google Cloud Translation API integration
-- [ ] Azure Translator integration
-- [ ] Real-time conversation mode
+- [ ] Real-time conversation mode (two-way live translation)
+- [ ] Google Cloud / Azure translation fallbacks
 - [ ] Offline translation mode
 - [ ] Sign language video demonstrations
-- [ ] Voice accent selection
-- [ ] Multi-service comparison
+- [ ] Usage analytics dashboard for API keys
+- [ ] Rate limiting for public API
