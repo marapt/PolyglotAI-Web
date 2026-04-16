@@ -1,37 +1,33 @@
 import { useState, useRef } from "react";
 import axios from "axios";
-import { Microphone, Stop, Play, Trash, CaretDown, Check } from "@phosphor-icons/react";
+import { Microphone, Stop, Play, Trash, CaretDown, Check, ArrowRight } from "@phosphor-icons/react";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const LANGUAGES = [
-  { code: "en", name: "English" },
-  { code: "es", name: "Spanish" },
-  { code: "fr", name: "French" },
-  { code: "de", name: "German" },
-  { code: "zh", name: "Chinese" },
-  { code: "ja", name: "Japanese" },
-  { code: "ko", name: "Korean" },
-  { code: "ar", name: "Arabic" },
-  { code: "hi", name: "Hindi" },
-  { code: "pt", name: "Portuguese" },
+  { code: "en", name: "English" }, { code: "es", name: "Spanish" },
+  { code: "fr", name: "French" }, { code: "de", name: "German" },
+  { code: "zh", name: "Chinese" }, { code: "ja", name: "Japanese" },
+  { code: "ko", name: "Korean" }, { code: "ar", name: "Arabic" },
+  { code: "hi", name: "Hindi" }, { code: "pt", name: "Portuguese" },
 ];
 
-function LangSelect({ value, onChange, label, testId }) {
+function LangSelect({ value, onChange, testId }) {
   const [open, setOpen] = useState(false);
   const selected = LANGUAGES.find((l) => l.code === value);
   return (
     <div className="relative flex-1">
-      <label className="text-xs tracking-[0.2em] uppercase font-bold text-[var(--muted-foreground)] mb-1 block">{label}</label>
-      <button data-testid={testId} onClick={() => setOpen(!open)} className="w-full flex items-center justify-between border border-black p-4 bg-white hover:bg-[var(--muted)] transition-colors duration-100">
-        <span className="font-semibold">{selected?.name || value}</span>
-        <CaretDown size={16} weight="bold" className={`transition-transform ${open ? "rotate-180" : ""}`} />
+      <button data-testid={testId} onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between rounded-xl border border-[var(--border)] bg-white px-4 py-3.5 hover:border-[var(--primary)] transition-all duration-200">
+        <span className="font-semibold text-sm">{selected?.name || value}</span>
+        <CaretDown size={14} weight="bold" className={`text-[var(--muted)] transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
-        <div className="absolute z-40 top-full left-0 right-0 border border-black bg-white max-h-64 overflow-y-auto">
+        <div className="absolute z-40 top-full mt-1 left-0 right-0 rounded-xl border border-[var(--border)] bg-white shadow-lg max-h-60 overflow-y-auto">
           {LANGUAGES.map((lang) => (
-            <button key={lang.code} onClick={() => { onChange(lang.code); setOpen(false); }} className="w-full flex items-center justify-between px-4 py-3 hover:bg-[var(--foreground)] hover:text-white transition-colors duration-100 border-b border-[var(--secondary)]">
-              <span>{lang.name}</span>
+            <button key={lang.code} onClick={() => { onChange(lang.code); setOpen(false); }}
+              className="w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-[var(--primary-light)] transition-colors duration-150 border-b border-[var(--border-light)] last:border-b-0">
+              <span className="font-medium">{lang.name}</span>
               {value === lang.code && <Check size={16} weight="bold" className="text-[var(--primary)]" />}
             </button>
           ))}
@@ -64,16 +60,13 @@ export default function VoiceTranslate() {
         stream.getTracks().forEach((t) => t.stop());
         const blob = new Blob(chunksRef.current, { type: "audio/webm" });
         const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64 = reader.result.split(",")[1];
-          processAudio(base64);
-        };
+        reader.onloadend = () => { processAudio(reader.result.split(",")[1]); };
         reader.readAsDataURL(blob);
       };
       mediaRecorderRef.current = recorder;
       recorder.start();
       setIsRecording(true);
-    } catch (err) {
+    } catch {
       setError("Microphone access denied. Please allow microphone permission.");
     }
   };
@@ -90,9 +83,7 @@ export default function VoiceTranslate() {
     setError("");
     try {
       const res = await axios.post(`${API}/voice-translate`, {
-        audio_base64: base64,
-        source_language: sourceLang,
-        target_language: targetLang,
+        audio_base64: base64, source_language: sourceLang, target_language: targetLang,
       });
       setTranscribedText(res.data.transcribed_text);
       setTranslatedText(res.data.translated_text);
@@ -110,74 +101,65 @@ export default function VoiceTranslate() {
     const byteArr = new Uint8Array(byteChars.length);
     for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
     const blob = new Blob([byteArr], { type: "audio/mp3" });
-    const url = URL.createObjectURL(blob);
-    const audio = new Audio(url);
-    audio.play();
+    new Audio(URL.createObjectURL(blob)).play();
   };
 
-  const clearAll = () => {
-    setTranscribedText("");
-    setTranslatedText("");
-    setAudioBase64("");
-    setError("");
-  };
+  const clearAll = () => { setTranscribedText(""); setTranslatedText(""); setAudioBase64(""); setError(""); };
 
   return (
-    <div className="animate-fade-in-up" data-testid="voice-translate-page">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-3xl tracking-tighter font-black">Voice Translation</h2>
-        <button data-testid="voice-clear-btn" onClick={clearAll} className="flex items-center gap-1 px-3 py-2 border border-black text-sm font-bold uppercase tracking-wider hover:bg-[var(--accent)] hover:text-white hover:border-[var(--accent)] transition-colors duration-100">
-          <Trash size={16} weight="bold" /> Clear
+    <div className="animate-fade-in" data-testid="voice-translate-page">
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="text-xl font-bold">Voice Translation</h2>
+        <button data-testid="voice-clear-btn" onClick={clearAll} className="p-2 rounded-lg text-[var(--accent)] hover:bg-red-50 transition-colors">
+          <Trash size={20} weight="bold" />
         </button>
       </div>
 
-      <div className="flex items-end gap-3 mb-8">
-        <LangSelect value={sourceLang} onChange={setSourceLang} label="From" testId="voice-source-lang" />
-        <div className="px-2 py-3 text-[var(--muted-foreground)] font-bold">&rarr;</div>
-        <LangSelect value={targetLang} onChange={setTargetLang} label="To" testId="voice-target-lang" />
+      <div className="flex items-center gap-2 mb-6">
+        <LangSelect value={sourceLang} onChange={setSourceLang} testId="voice-source-lang" />
+        <div className="shrink-0 text-[var(--primary)]"><ArrowRight size={18} weight="bold" /></div>
+        <LangSelect value={targetLang} onChange={setTargetLang} testId="voice-target-lang" />
       </div>
 
-      <div className="flex flex-col items-center py-12 border border-black bg-white mb-6">
+      {/* Record Button */}
+      <div className="flex flex-col items-center py-10 bg-white rounded-2xl border border-[var(--border)] shadow-sm mb-5">
         <button
           data-testid="record-button"
           onClick={isRecording ? stopRecording : startRecording}
           disabled={loading}
-          className={`w-28 h-28 flex items-center justify-center border-2 transition-colors duration-100 ${
+          className={`w-28 h-28 rounded-full flex items-center justify-center transition-all duration-200 ${
             isRecording
-              ? "bg-[var(--accent)] border-[var(--accent)] text-white animate-pulse-record"
-              : "bg-[var(--primary)] border-[var(--primary)] text-white hover:bg-[var(--foreground)] hover:border-[var(--foreground)]"
-          } disabled:opacity-40`}
+              ? "bg-[var(--accent)] shadow-lg shadow-red-200 animate-recording-pulse"
+              : "bg-[var(--primary)] shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300 hover:scale-105"
+          } disabled:opacity-40 text-white`}
         >
-          {isRecording ? <Stop size={48} weight="fill" /> : <Microphone size={48} weight="bold" />}
+          {isRecording ? <Stop size={44} weight="fill" /> : <Microphone size={44} weight="bold" />}
         </button>
-        <p className="mt-4 text-sm font-bold uppercase tracking-[0.15em] text-[var(--muted-foreground)]">
-          {isRecording ? "Recording... Tap to stop" : loading ? "Processing..." : "Tap to record"}
+        <p className="mt-4 text-sm font-medium text-[var(--muted)]">
+          {isRecording ? "Tap to stop recording" : loading ? "Processing your audio..." : "Tap to start recording"}
         </p>
-        {loading && <div className="mt-4 w-6 h-6 border-2 border-[var(--primary)] border-t-transparent animate-spin" />}
+        {loading && <div className="mt-3 w-5 h-5 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />}
       </div>
 
       {error && (
-        <div data-testid="voice-error" className="mb-4 p-4 border border-[var(--accent)] bg-red-50 text-[var(--accent)] font-semibold">{error}</div>
+        <div data-testid="voice-error" className="p-4 rounded-xl bg-red-50 text-[var(--accent)] text-sm font-medium mb-4">{error}</div>
       )}
 
       {transcribedText && (
-        <div className="border border-black p-6 mb-4 animate-fade-in-up" data-testid="transcribed-text">
-          <label className="text-xs tracking-[0.2em] uppercase font-bold text-[var(--muted-foreground)] mb-2 block">What you said</label>
-          <p className="font-mono text-lg">{transcribedText}</p>
+        <div className="bg-white rounded-2xl border border-[var(--border)] p-5 mb-4 shadow-sm animate-fade-in" data-testid="transcribed-text">
+          <label className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-2 block">What You Said</label>
+          <p className="text-base leading-relaxed">{transcribedText}</p>
         </div>
       )}
 
       {translatedText && (
-        <div className="border border-black p-6 bg-[var(--muted)] animate-fade-in-up" data-testid="voice-translated-text">
-          <label className="text-xs tracking-[0.2em] uppercase font-bold text-[var(--muted-foreground)] mb-2 block">Translation</label>
-          <p className="font-mono text-lg mb-4">{translatedText}</p>
+        <div className="bg-[var(--primary-light)] rounded-2xl border border-indigo-200 p-5 animate-fade-in" data-testid="voice-translated-text">
+          <label className="text-xs font-semibold text-[var(--primary)] uppercase tracking-wider mb-2 block">Translation</label>
+          <p className="text-base leading-relaxed mb-4">{translatedText}</p>
           {audioBase64 && (
-            <button
-              data-testid="play-audio-btn"
-              onClick={playAudio}
-              className="flex items-center gap-2 px-4 py-2 border border-black bg-white font-bold text-sm uppercase tracking-wider hover:bg-[var(--primary)] hover:text-white hover:border-[var(--primary)] transition-colors duration-100"
-            >
-              <Play size={18} weight="fill" /> Play Translation
+            <button data-testid="play-audio-btn" onClick={playAudio}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-[var(--border)] text-[var(--primary)] font-semibold text-sm hover:bg-[var(--primary)] hover:text-white hover:border-[var(--primary)] transition-all duration-200">
+              <Play size={16} weight="fill" /> Play Translation
             </button>
           )}
         </div>

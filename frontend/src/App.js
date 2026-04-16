@@ -14,11 +14,11 @@ import {
 } from "@phosphor-icons/react";
 
 const TABS = [
-  { id: "text", label: "TEXT", icon: Translate, component: TextTranslate },
-  { id: "voice", label: "VOICE", icon: Microphone, component: VoiceTranslate },
-  { id: "sign-to-text", label: "SIGN\u2192TEXT", icon: HandPalm, component: SignToText },
-  { id: "text-to-sign", label: "TEXT\u2192SIGN", icon: TextAa, component: TextToSign },
-  { id: "history", label: "HISTORY", icon: ClockCounterClockwise, component: History },
+  { id: "text", label: "Text", icon: Translate, component: TextTranslate },
+  { id: "voice", label: "Voice", icon: Microphone, component: VoiceTranslate },
+  { id: "sign-to-text", label: "Sign\u2192Text", icon: HandPalm, component: SignToText },
+  { id: "text-to-sign", label: "Text\u2192Sign", icon: TextAa, component: TextToSign },
+  { id: "history", label: "History", icon: ClockCounterClockwise, component: History },
 ];
 
 function App() {
@@ -27,22 +27,33 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col" data-testid="app-container">
-      <header className="border-b border-black bg-white" data-testid="app-header">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Translate size={28} weight="bold" className="text-[var(--primary)]" />
-            <h1 className="text-2xl tracking-tighter font-black uppercase">
+      {/* Header */}
+      <header className="bg-white border-b border-[var(--border)] sticky top-0 z-50" data-testid="app-header">
+        <div className="max-w-3xl mx-auto px-5 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-[var(--primary)] flex items-center justify-center">
+              <Translate size={20} weight="bold" className="text-white" />
+            </div>
+            <h1 className="text-xl font-extrabold tracking-tight">
               Polyglot<span className="text-[var(--primary)]">AI</span>
             </h1>
           </div>
-          <span className="text-xs tracking-[0.2em] uppercase font-bold text-[var(--muted-foreground)] hidden sm:block">
+          <span className="text-xs font-semibold text-[var(--muted-light)] tracking-wide hidden sm:block">
             Universal Translator
           </span>
         </div>
       </header>
 
-      <nav className="border-b border-black bg-white sticky top-0 z-50" data-testid="app-nav">
-        <div className="max-w-6xl mx-auto flex overflow-x-auto">
+      {/* Main Content */}
+      <main className="flex-1 pb-24" data-testid="app-main">
+        <div className="max-w-3xl mx-auto px-5 py-6">
+          <ActiveComponent />
+        </div>
+      </main>
+
+      {/* Bottom Tab Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-[var(--border)] z-50" data-testid="app-nav">
+        <div className="max-w-3xl mx-auto flex">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -51,32 +62,21 @@ function App() {
                 key={tab.id}
                 data-testid={`nav-tab-${tab.id}`}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-5 py-3.5 text-xs tracking-[0.15em] font-bold uppercase border-r border-black transition-colors duration-100 whitespace-nowrap ${
+                className={`flex-1 flex flex-col items-center gap-1 py-2.5 transition-colors duration-200 ${
                   isActive
-                    ? "bg-[var(--foreground)] text-white"
-                    : "bg-white text-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-white"
+                    ? "text-[var(--primary)]"
+                    : "text-[var(--muted-light)] hover:text-[var(--foreground)]"
                 }`}
               >
-                <Icon size={18} weight={isActive ? "fill" : "bold"} />
-                {tab.label}
+                <Icon size={22} weight={isActive ? "fill" : "regular"} />
+                <span className={`text-[10px] font-semibold ${isActive ? "font-bold" : ""}`}>
+                  {tab.label}
+                </span>
               </button>
             );
           })}
         </div>
       </nav>
-
-      <main className="flex-1" data-testid="app-main">
-        <div className="max-w-6xl mx-auto p-6">
-          <ActiveComponent />
-        </div>
-      </main>
-
-      <footer className="border-t border-black py-4 px-6" data-testid="app-footer">
-        <div className="max-w-6xl mx-auto flex items-center justify-between text-xs tracking-[0.1em] uppercase text-[var(--muted-foreground)]">
-          <span>Polyglot AI &mdash; Powered by OpenAI</span>
-          <span>100+ Languages &bull; Voice &bull; Sign Language</span>
-        </div>
-      </footer>
     </div>
   );
 }
