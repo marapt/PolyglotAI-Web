@@ -187,8 +187,8 @@ print(response.json()["translated_text"])
         <div className="space-y-5">
           <div className="bg-white rounded-2xl border border-[var(--border)] p-5 shadow-sm">
             <h3 className="text-base font-bold mb-1">Embeddable Translation Widget</h3>
-            <p className="text-xs text-[var(--muted)] mb-4">Add a translation widget to any website with a single script tag</p>
-            <CodeBlock code={`<!-- Add this to your HTML -->
+            <p className="text-xs text-[var(--muted)] mb-4">Add a floating translation widget to any website with two script tags. Requires an API key.</p>
+            <CodeBlock code={`<!-- Add this before </body> -->
 <script>
   window.PolyglotConfig = {
     apiKey: "YOUR_API_KEY",
@@ -198,7 +198,7 @@ print(response.json()["translated_text"])
   };
 </script>
 <script src="${BASE_URL}/widget.js"></script>`} />
-            <p className="text-xs text-[var(--muted)] mt-4">The widget adds a floating translation button. Users can select text, choose a language, and get instant translations.</p>
+            <p className="text-xs text-[var(--muted)] mt-4">The widget adds a floating indigo button. Click to open a translation panel, or select text on the page and it auto-fills.</p>
           </div>
           <div className="bg-[var(--primary-light)] rounded-2xl p-5 border border-indigo-200">
             <h4 className="text-sm font-bold text-[var(--primary)] mb-2">How it works</h4>
@@ -221,15 +221,21 @@ print(response.json()["translated_text"])
             </h3>
             <p className="text-xs text-[var(--muted)] mb-4">Translate selected text on any webpage — WhatsApp Web, Airbnb, Gmail, and more</p>
 
+            <a href="/polyglot-chrome-extension.zip" download
+              className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-purple-600 text-white font-semibold text-sm hover:bg-purple-700 transition-all shadow-md shadow-purple-200 mb-4"
+              data-testid="download-extension-btn">
+              <ArrowRight size={16} weight="bold" style={{transform: 'rotate(90deg)'}} /> Download Chrome Extension (.zip)
+            </a>
+
             <div className="bg-purple-50 rounded-xl p-4 mb-4">
               <h4 className="text-sm font-bold text-purple-700 mb-2">Setup Instructions</h4>
               <ol className="space-y-1.5 text-xs text-purple-900">
-                <li>1. Create a folder called <code className="bg-purple-100 px-1 rounded">polyglot-extension</code></li>
-                <li>2. Add the manifest.json and content.js files below</li>
-                <li>3. Go to <code className="bg-purple-100 px-1 rounded">chrome://extensions</code></li>
-                <li>4. Enable "Developer mode" (top right toggle)</li>
-                <li>5. Click "Load unpacked" and select your folder</li>
-                <li>6. Select any text on a webpage and click "Translate"</li>
+                <li>1. Download and unzip the extension file above</li>
+                <li>2. Go to <code className="bg-purple-100 px-1 rounded">chrome://extensions</code> in Chrome</li>
+                <li>3. Enable "Developer mode" (top right toggle)</li>
+                <li>4. Click "Load unpacked" and select the unzipped folder</li>
+                <li>5. Click the extension icon to configure your API URL and key</li>
+                <li>6. Select any text on a webpage and click the "Translate" button</li>
               </ol>
             </div>
 

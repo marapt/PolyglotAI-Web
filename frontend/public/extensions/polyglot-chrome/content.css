@@ -1,0 +1,108 @@
+/* PolyglotAI Chrome Extension Styles */
+
+.polyglot-ext-translate-btn {
+  position: fixed;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background: #4F46E5;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
+  animation: polyglot-ext-fade-in 0.15s ease-out;
+}
+.polyglot-ext-translate-btn:hover {
+  background: #4338CA;
+  transform: scale(1.05);
+}
+
+.polyglot-ext-popup {
+  position: fixed;
+  z-index: 2147483647;
+  width: 300px;
+  background: white;
+  border-radius: 14px;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  animation: polyglot-ext-fade-in 0.2s ease-out;
+  overflow: hidden;
+}
+
+.polyglot-ext-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+.polyglot-ext-brand {
+  font-size: 12px;
+  color: #1F2937;
+}
+.polyglot-ext-brand strong {
+  color: #4F46E5;
+}
+
+.polyglot-ext-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #9CA3AF;
+  cursor: pointer;
+  padding: 0 4px;
+  border-radius: 4px;
+}
+.polyglot-ext-close:hover {
+  background: #F3F4F6;
+  color: #1F2937;
+}
+
+.polyglot-ext-body {
+  padding: 14px;
+}
+
+.polyglot-ext-text {
+  font-size: 14px;
+  color: #1F2937;
+  line-height: 1.6;
+}
+
+.polyglot-ext-error {
+  color: #DC2626;
+  font-size: 13px;
+}
+
+.polyglot-ext-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #6B7280;
+}
+
+.polyglot-ext-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #E5E7EB;
+  border-top-color: #4F46E5;
+  border-radius: 50%;
+  animation: polyglot-ext-spin 0.6s linear infinite;
+}
+
+@keyframes polyglot-ext-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes polyglot-ext-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

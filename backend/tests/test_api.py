@@ -337,5 +337,62 @@ class TestApiDocs:
         print(f"SUCCESS: API docs returned {len(data['endpoints'])} endpoints")
 
 
+# ==================== ITERATION 4 TESTS - Widget & Extension ====================
+
+class TestWidgetAndExtensionFiles:
+    """Tests for hosted widget.js and Chrome extension zip file"""
+    
+    def test_widget_js_accessible_and_valid_javascript(self):
+        """Test /widget.js is accessible and contains valid JavaScript"""
+        response = requests.get(f"{BASE_URL}/widget.js")
+        assert response.status_code == 200
+        
+        # Verify content type is JavaScript
+        content_type = response.headers.get("content-type", "")
+        assert "javascript" in content_type.lower(), f"Expected JavaScript content-type, got: {content_type}"
+        
+        # Verify content is valid JavaScript (contains expected code)
+        content = response.text
+        assert "PolyglotAI" in content, "Widget should contain PolyglotAI branding"
+        assert "window.PolyglotConfig" in content, "Widget should read from window.PolyglotConfig"
+        assert "polyglot-widget-btn" in content, "Widget should create floating button"
+        assert "polyglot-widget-panel" in content, "Widget should create translation panel"
+        assert "/widget/translate" in content, "Widget should call /widget/translate endpoint"
+        
+        # Verify it's a self-executing function
+        assert content.strip().startswith("//") or content.strip().startswith("(function"), "Widget should be IIFE or start with comment"
+        
+        print(f"SUCCESS: /widget.js accessible with {len(content)} bytes of valid JavaScript")
+    
+    def test_chrome_extension_zip_downloadable(self):
+        """Test /polyglot-chrome-extension.zip is downloadable"""
+        response = requests.get(f"{BASE_URL}/polyglot-chrome-extension.zip")
+        assert response.status_code == 200
+        
+        # Verify content type is zip
+        content_type = response.headers.get("content-type", "")
+        assert "zip" in content_type.lower() or "octet-stream" in content_type.lower(), f"Expected zip content-type, got: {content_type}"
+        
+        # Verify content length is reasonable (should be > 10KB)
+        content_length = len(response.content)
+        assert content_length > 10000, f"Zip file too small: {content_length} bytes"
+        
+        # Verify it's a valid zip file (starts with PK signature)
+        assert response.content[:2] == b'PK', "File should be a valid ZIP (PK signature)"
+        
+        print(f"SUCCESS: /polyglot-chrome-extension.zip downloadable with {content_length} bytes")
+    
+    def test_widget_js_content_length(self):
+        """Test /widget.js has reasonable content length"""
+        response = requests.get(f"{BASE_URL}/widget.js")
+        assert response.status_code == 200
+        
+        content_length = len(response.text)
+        assert content_length > 5000, f"Widget.js too small: {content_length} bytes"
+        assert content_length < 100000, f"Widget.js too large: {content_length} bytes"
+        
+        print(f"SUCCESS: /widget.js content-length: {content_length} bytes")
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
