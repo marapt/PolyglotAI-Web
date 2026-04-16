@@ -10,9 +10,12 @@ from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 import uuid
 import secrets
+import hashlib
 from datetime import datetime, timezone
 import base64
 import io
+import time
+from collections import defaultdict
 
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 
@@ -30,6 +33,28 @@ api_router = APIRouter(prefix="/api")
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+
+# ==================== RATE LIMITER ====================
+
+class RateLimiter:
+    def __init__(self):
+        self.requests = defaultdict(list)
+
+    def is_allowed(self, key: str, max_per_minute: int = 30) -> bool:
+        now = time.time()
+        window = [t for t in self.requests[key] if now - t < 60]
+        self.requests[key] = window
+        if len(window) >= max_per_minute:
+            return False
+        self.requests[key].append(now)
+        return True
+
+    def get_usage(self, key: str) -> int:
+        now = time.time()
+        return len([t for t in self.requests[key] if now - t < 60])
+
+rate_limiter = RateLimiter()
 
 
 # ==================== MODELS ====================
@@ -84,11 +109,17 @@ class TextToSignResponse(BaseModel):
 
 class ApiKeyCreate(BaseModel):
     name: str
+    scope: str = "translate"  # translate, full, read-only
+    rate_limit: int = 30  # requests per minute
+    daily_cap: int = 1000  # max requests per day, 0 = unlimited
 
 class ApiKeyResponse(BaseModel):
     id: str
     name: str
     key: str
+    scope: str
+    rate_limit: int
+    daily_cap: int
     created_at: str
 
 class WidgetTranslateRequest(BaseModel):
@@ -96,13 +127,17 @@ class WidgetTranslateRequest(BaseModel):
     source_language: str = "auto"
     target_language: str = "en"
 
-class WhatsAppWebhook(BaseModel):
-    from_number: str = ""
-    body: str = ""
-    to_language: str = "en"
 
+# ==================== HELPERS ====================
 
-# ==================== HELPER FUNCTIONS ====================
+def hash_key(key: str) -> str:
+    return hashlib.sha256(key.encode()).hexdigest()
+
+def mask_key(key: str) -> str:
+    if len(key) <= 10:
+        return "***"
+    return key[:5] + "\u2022" * 12 + key[-4:]
+
 
 async def translate_with_openai(text: str, source_lang: str, target_lang: str) -> str:
     chat = LlmChat(
@@ -110,9 +145,7 @@ async def translate_with_openai(text: str, source_lang: str, target_lang: str) -
         session_id=f"translate_{uuid.uuid4()}",
         system_message=f"You are a professional translator. Translate the given text from {source_lang} to {target_lang}. Only provide the translation, no explanations."
     ).with_model("openai", "gpt-4o-mini")
-    user_message = UserMessage(text=text)
-    response = await chat.send_message(user_message)
-    return response
+    return await chat.send_message(UserMessage(text=text))
 
 
 async def transcribe_audio_openai(audio_base64: str, language: str) -> str:
@@ -141,11 +174,10 @@ async def interpret_sign_language(image_base64: str, target_lang: str) -> str:
         session_id=f"sign_{uuid.uuid4()}",
         system_message=f"You are an expert in sign language interpretation. Analyze the image and describe what sign language gestures you see, then provide the meaning in {target_lang}. Be specific and accurate."
     ).with_model("openai", "gpt-4o")
-    user_message = UserMessage(
+    return await chat.send_message(UserMessage(
         text="What sign language gesture is being shown in this image? Provide the interpretation.",
         image_urls=[f"data:image/jpeg;base64,{image_base64}"]
-    )
-    return await chat.send_message(user_message)
+    ))
 
 
 async def generate_sign_description(text: str, sign_language: str) -> str:
@@ -154,43 +186,81 @@ async def generate_sign_description(text: str, sign_language: str) -> str:
         session_id=f"sign_desc_{uuid.uuid4()}",
         system_message=f"You are an expert in {sign_language} (Sign Language). Describe step-by-step how to sign the given text in {sign_language}, including hand shapes, movements, and facial expressions."
     ).with_model("openai", "gpt-4o-mini")
-    user_message = UserMessage(text=f"How do I sign: '{text}'")
-    return await chat.send_message(user_message)
+    return await chat.send_message(UserMessage(text=f"How do I sign: '{text}'"))
 
 
-async def validate_api_key(api_key: str) -> bool:
+async def validate_api_key(api_key: str, required_scope: str = "translate") -> dict:
+    """Validate API key and check rate limits, scopes, and daily caps."""
     if not api_key:
-        return False
-    key_doc = await db.api_keys.find_one({"key": api_key}, {"_id": 0})
-    if key_doc:
-        await db.api_keys.update_one({"key": api_key}, {"$inc": {"usage_count": 1}, "$set": {"last_used": datetime.now(timezone.utc).isoformat()}})
-        return True
-    return False
+        raise HTTPException(status_code=401, detail="Missing API key. Include X-Api-Key header.")
+
+    key_hash = hash_key(api_key)
+    key_doc = await db.api_keys.find_one({"key_hash": key_hash, "active": True}, {"_id": 0})
+
+    if not key_doc:
+        raise HTTPException(status_code=401, detail="Invalid API key.")
+
+    # Check scope
+    scope = key_doc.get("scope", "translate")
+    scope_hierarchy = {"read-only": 0, "translate": 1, "full": 2}
+    required_level = scope_hierarchy.get(required_scope, 1)
+    key_level = scope_hierarchy.get(scope, 1)
+    if key_level < required_level:
+        raise HTTPException(status_code=403, detail=f"Key scope '{scope}' insufficient. Requires '{required_scope}'.")
+
+    # Check rate limit
+    rate_limit = key_doc.get("rate_limit", 30)
+    if not rate_limiter.is_allowed(key_hash, rate_limit):
+        raise HTTPException(
+            status_code=429,
+            detail=f"Rate limit exceeded ({rate_limit} requests/minute). Try again shortly.",
+            headers={"Retry-After": "60"}
+        )
+
+    # Check daily cap
+    daily_cap = key_doc.get("daily_cap", 1000)
+    if daily_cap > 0:
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        daily_usage = key_doc.get("daily_usage", {})
+        today_count = daily_usage.get(today, 0)
+        if today_count >= daily_cap:
+            raise HTTPException(status_code=429, detail=f"Daily usage cap reached ({daily_cap} requests/day). Resets at midnight UTC.")
+
+        await db.api_keys.update_one(
+            {"key_hash": key_hash},
+            {"$inc": {f"daily_usage.{today}": 1, "usage_count": 1},
+             "$set": {"last_used": datetime.now(timezone.utc).isoformat()}}
+        )
+    else:
+        await db.api_keys.update_one(
+            {"key_hash": key_hash},
+            {"$inc": {"usage_count": 1},
+             "$set": {"last_used": datetime.now(timezone.utc).isoformat()}}
+        )
+
+    return key_doc
 
 
 # ==================== CORE TRANSLATION ROUTES ====================
 
 @api_router.get("/")
 async def root():
-    return {"message": "Polyglot AI Translation API", "status": "active", "version": "2.0"}
+    return {"message": "Polyglot AI Translation API", "status": "active", "version": "2.1"}
 
 
 @api_router.post("/translate", response_model=TranslationResponse)
 async def translate_text(request: TranslationRequest):
-    logger.info(f"Translation: {request.source_language} -> {request.target_language}")
     translated = await translate_with_openai(request.text, request.source_language, request.target_language)
     response = TranslationResponse(
         original_text=request.text, translated_text=translated,
         source_language=request.source_language, target_language=request.target_language
     )
-    doc = response.model_dump()
-    await db.translations.insert_one(doc)
+    await db.translations.insert_one(response.model_dump())
     return response
 
 
 @api_router.post("/voice-translate", response_model=VoiceTranslationResponse)
 async def voice_translate(request: VoiceTranslationRequest):
-    logger.info(f"Voice translation: {request.source_language} -> {request.target_language}")
     transcribed = await transcribe_audio_openai(request.audio_base64, request.source_language)
     translated = await translate_with_openai(transcribed, request.source_language, request.target_language)
     audio_base64 = await text_to_speech_openai(translated)
@@ -266,59 +336,84 @@ async def get_supported_languages():
     return {"spoken_languages": languages, "sign_languages": sign_languages}
 
 
-# ==================== PUBLIC API (key-authenticated) ====================
+# ==================== SECURE API KEY MANAGEMENT ====================
 
 @api_router.post("/keys/generate", response_model=ApiKeyResponse)
 async def generate_api_key(request: ApiKeyCreate):
-    key = f"pk_{secrets.token_hex(24)}"
+    """Generate a new API key. The full key is returned ONLY ONCE — save it immediately."""
+    raw_key = f"pk_{secrets.token_hex(24)}"
+    key_hash_val = hash_key(raw_key)
+
     doc = {
         "id": str(uuid.uuid4()),
         "name": request.name,
-        "key": key,
+        "key_hash": key_hash_val,
+        "key_prefix": raw_key[:8],
+        "key_suffix": raw_key[-4:],
+        "scope": request.scope,
+        "rate_limit": request.rate_limit,
+        "daily_cap": request.daily_cap,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "usage_count": 0,
-        "last_used": None
+        "daily_usage": {},
+        "last_used": None,
+        "active": True
     }
     await db.api_keys.insert_one(doc)
-    return ApiKeyResponse(id=doc["id"], name=doc["name"], key=doc["key"], created_at=doc["created_at"])
+
+    return ApiKeyResponse(
+        id=doc["id"], name=doc["name"], key=raw_key,
+        scope=doc["scope"], rate_limit=doc["rate_limit"],
+        daily_cap=doc["daily_cap"], created_at=doc["created_at"]
+    )
 
 
 @api_router.get("/keys")
 async def list_api_keys():
-    keys = await db.api_keys.find({}, {"_id": 0}).to_list(100)
+    """List API keys with masked values. Full keys are never returned after creation."""
+    keys = await db.api_keys.find({"active": True}, {"_id": 0, "key_hash": 0, "daily_usage": 0}).to_list(100)
     for k in keys:
-        k["key"] = k["key"][:8] + "..." + k["key"][-4:]
+        prefix = k.pop("key_prefix", "pk_??")
+        suffix = k.pop("key_suffix", "????")
+        k["key_masked"] = f"{prefix}{'*' * 12}{suffix}"
     return {"keys": keys}
 
 
+@api_router.delete("/keys/{key_id}")
+async def revoke_api_key(key_id: str):
+    """Revoke (deactivate) an API key."""
+    result = await db.api_keys.update_one(
+        {"id": key_id},
+        {"$set": {"active": False, "revoked_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Key not found")
+    return {"status": "revoked", "key_id": key_id}
+
+
+# ==================== PUBLIC API (key-authenticated + rate-limited) ====================
+
 @api_router.post("/v1/translate")
 async def public_translate(request: WidgetTranslateRequest, x_api_key: str = Header(None)):
-    if not await validate_api_key(x_api_key):
-        raise HTTPException(status_code=401, detail="Invalid or missing API key. Generate one at /api/keys/generate")
+    """Public translation endpoint with key auth, rate limiting, and usage tracking."""
+    await validate_api_key(x_api_key, required_scope="translate")
     source = request.source_language if request.source_language != "auto" else "auto-detect"
     translated = await translate_with_openai(request.text, source, request.target_language)
     return {"translated_text": translated, "source_language": request.source_language, "target_language": request.target_language}
 
 
-# ==================== WIDGET ENDPOINT (CORS-open) ====================
-
 @api_router.post("/widget/translate")
 async def widget_translate(request: WidgetTranslateRequest, x_api_key: str = Header(None)):
-    if not await validate_api_key(x_api_key):
-        raise HTTPException(status_code=401, detail="Invalid API key")
+    await validate_api_key(x_api_key, required_scope="translate")
     source = request.source_language if request.source_language != "auto" else "auto-detect"
     translated = await translate_with_openai(request.text, source, request.target_language)
     return {"translated_text": translated}
 
 
-# ==================== WHATSAPP WEBHOOK ====================
+# ==================== WEBHOOKS ====================
 
 @api_router.post("/webhooks/whatsapp")
 async def whatsapp_webhook(request: Request):
-    """Webhook endpoint for Twilio WhatsApp integration.
-    When connected to Twilio, incoming WhatsApp messages hit this endpoint.
-    The bot auto-detects language and translates to English (or specified language).
-    """
     try:
         form = await request.form()
         body = form.get("Body", "")
@@ -335,16 +430,6 @@ async def whatsapp_webhook(request: Request):
             return HTMLResponse(content='<Response><Message>Send me any text and I\'ll translate it! Use "/to es Hello" to translate to Spanish.</Message></Response>', media_type="application/xml")
 
         translated = await translate_with_openai(body, "auto-detect", to_language)
-
-        await db.whatsapp_translations.insert_one({
-            "id": str(uuid.uuid4()),
-            "from": from_number,
-            "original": body,
-            "translated": translated,
-            "target_language": to_language,
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        })
-
         twiml = f'<Response><Message>{translated}</Message></Response>'
         return HTMLResponse(content=twiml, media_type="application/xml")
     except Exception as e:
@@ -353,27 +438,20 @@ async def whatsapp_webhook(request: Request):
 
 
 @api_router.get("/webhooks/whatsapp")
-async def whatsapp_webhook_verify(request: Request):
-    """GET handler for WhatsApp webhook verification"""
-    return {"status": "WhatsApp webhook active", "usage": "POST messages to this endpoint via Twilio"}
+async def whatsapp_webhook_verify():
+    return {"status": "WhatsApp webhook active"}
 
-
-# ==================== PHONE CALL WEBHOOK ====================
 
 @api_router.post("/webhooks/voice")
 async def voice_call_webhook(request: Request):
-    """Webhook for Twilio Voice - real-time phone call translation.
-    Returns TwiML to gather speech, transcribe, translate, and speak back.
-    """
     try:
         form = await request.form()
         speech_result = form.get("SpeechResult", "")
-        call_sid = form.get("CallSid", "")
 
         if not speech_result:
             twiml = '''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Say voice="alice">Welcome to Polyglot AI real-time translator. Speak in any language and I will translate to English. Press star to change target language.</Say>
+    <Say voice="alice">Welcome to Polyglot AI. Speak in any language and I will translate to English.</Say>
     <Gather input="speech" action="/api/webhooks/voice" method="POST" speechTimeout="auto" language="en-US">
         <Say voice="alice">Please speak now.</Say>
     </Gather>
@@ -381,27 +459,17 @@ async def voice_call_webhook(request: Request):
             return HTMLResponse(content=twiml, media_type="application/xml")
 
         translated = await translate_with_openai(speech_result, "auto-detect", "en")
-
-        await db.call_translations.insert_one({
-            "id": str(uuid.uuid4()),
-            "call_sid": call_sid,
-            "original": speech_result,
-            "translated": translated,
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        })
-
         twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
     <Say voice="alice">{translated}</Say>
     <Gather input="speech" action="/api/webhooks/voice" method="POST" speechTimeout="auto">
-        <Say voice="alice">Speak again to continue translating.</Say>
+        <Say voice="alice">Speak again to continue.</Say>
     </Gather>
 </Response>'''
         return HTMLResponse(content=twiml, media_type="application/xml")
     except Exception as e:
         logger.error(f"Voice webhook error: {e}")
-        twiml = '<?xml version="1.0" encoding="UTF-8"?><Response><Say>Translation error. Please try again.</Say></Response>'
-        return HTMLResponse(content=twiml, media_type="application/xml")
+        return HTMLResponse(content='<?xml version="1.0" encoding="UTF-8"?><Response><Say>Error. Please try again.</Say></Response>', media_type="application/xml")
 
 
 # ==================== API DOCS ====================
@@ -410,23 +478,26 @@ async def voice_call_webhook(request: Request):
 async def api_docs():
     return {
         "name": "Polyglot AI Translation API",
-        "version": "2.0",
+        "version": "2.1",
         "base_url": "/api",
         "authentication": "Include header: X-Api-Key: your_api_key",
+        "security": {
+            "key_hashing": "Keys are SHA-256 hashed at rest. Full key shown only once on creation.",
+            "rate_limiting": "Configurable per key (default: 30 req/min)",
+            "daily_caps": "Configurable per key (default: 1000 req/day)",
+            "scopes": ["read-only", "translate", "full"],
+            "https": "All endpoints require HTTPS in production",
+            "data_retention": "Translation text is NOT logged by default for API calls. Only metadata (timestamps, language pairs) is stored."
+        },
         "endpoints": [
-            {"method": "POST", "path": "/v1/translate", "description": "Translate text between languages", "auth": True,
-             "body": {"text": "string", "source_language": "string (e.g. 'en' or 'auto')", "target_language": "string (e.g. 'es')"}},
-            {"method": "POST", "path": "/translate", "description": "Translate text (app internal)", "auth": False},
-            {"method": "POST", "path": "/voice-translate", "description": "Voice translation (audio base64)", "auth": False},
-            {"method": "POST", "path": "/sign-to-text", "description": "Sign language image interpretation", "auth": False},
-            {"method": "POST", "path": "/text-to-sign", "description": "Text to sign language instructions", "auth": False},
-            {"method": "GET", "path": "/supported-languages", "description": "List all supported languages", "auth": False},
-            {"method": "GET", "path": "/history", "description": "Translation history", "auth": False},
-            {"method": "POST", "path": "/keys/generate", "description": "Generate an API key", "auth": False,
-             "body": {"name": "string"}},
-            {"method": "POST", "path": "/widget/translate", "description": "Widget translation endpoint", "auth": True},
-            {"method": "POST", "path": "/webhooks/whatsapp", "description": "WhatsApp Twilio webhook", "auth": False},
-            {"method": "POST", "path": "/webhooks/voice", "description": "Phone call Twilio webhook", "auth": False},
+            {"method": "POST", "path": "/v1/translate", "description": "Translate text", "auth": True, "scope": "translate"},
+            {"method": "POST", "path": "/keys/generate", "description": "Generate API key", "auth": False,
+             "body": {"name": "string", "scope": "translate|full|read-only", "rate_limit": "int (req/min)", "daily_cap": "int (req/day)"}},
+            {"method": "GET", "path": "/keys", "description": "List keys (masked)", "auth": False},
+            {"method": "DELETE", "path": "/keys/{key_id}", "description": "Revoke a key", "auth": False},
+            {"method": "GET", "path": "/supported-languages", "description": "List languages", "auth": False},
+            {"method": "POST", "path": "/webhooks/whatsapp", "description": "WhatsApp webhook", "auth": False},
+            {"method": "POST", "path": "/webhooks/voice", "description": "Voice call webhook", "auth": False},
         ]
     }
 
@@ -446,7 +517,8 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_db():
     await db.translations.create_index([("timestamp", -1)])
-    await db.api_keys.create_index([("key", 1)], unique=True)
+    await db.api_keys.create_index([("key_hash", 1)], unique=True)
+    await db.api_keys.create_index([("id", 1)])
     logger.info("Database indexes created")
 
 @app.on_event("shutdown")

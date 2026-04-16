@@ -1,0 +1,99 @@
+{
+  "summary": "Completed comprehensive testing of Polyglot AI Security Hardening (Iteration 5). All 20 backend tests pass. All frontend features working correctly. Fixed one bug: revoked keys were still working (validate_api_key didn't check 'active' field).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_security_hardening.py",
+    "/app/test_reports/pytest/pytest_results_iter5.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Fixed bug: validate_api_key now checks 'active: True' to properly reject revoked keys",
+    "All security features implemented correctly: SHA-256 hashing, one-time key display, rate limiting, daily caps, scoped permissions, key revocation",
+    "Code examples in UI properly use environment variables with security warnings",
+    "Security documentation page is comprehensive and well-organized"
+  ],
+  "updated_files": [
+    "/app/backend/server.py",
+    "/app/backend/tests/test_security_hardening.py"
+  ],
+  "success_rate": {
+    "backend": "100% (20/20 tests passed)",
+    "frontend": "100% (all UI tests passed)"
+  },
+  "test_credentials": "No authentication required. API keys are generated dynamically via POST /api/keys/generate",
+  "seed_data_creation": "Test API keys created during testing with TEST_ prefix",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteration 5 adds security hardening: SHA-256 hashed API keys at rest, one-time key display, per-key rate limiting (configurable req/min), daily usage caps, scoped permissions (read-only, translate, full), key revocation, Security documentation page. Bug fixed: validate_api_key now filters by 'active: True' to reject revoked keys.",
+  "features_tested": {
+    "api_key_generation": {
+      "status": "PASS",
+      "details": "POST /api/keys/generate creates key with pk_ prefix, accepts scope/rate_limit/daily_cap parameters, returns full key once"
+    },
+    "key_masking": {
+      "status": "PASS",
+      "details": "GET /api/keys returns masked keys (pk_xxxx************xxxx), never full key"
+    },
+    "key_authentication": {
+      "status": "PASS",
+      "details": "Valid key works for /api/v1/translate, missing key returns 401, invalid key returns 401"
+    },
+    "scope_enforcement": {
+      "status": "PASS",
+      "details": "translate scope can translate, read-only scope returns 403, full scope can translate"
+    },
+    "rate_limiting": {
+      "status": "PASS",
+      "details": "Key with rate_limit=2 returns 429 after 2 requests in 1 minute"
+    },
+    "daily_cap": {
+      "status": "PASS",
+      "details": "Key with daily_cap=3 returns 429 after 3 requests"
+    },
+    "key_revocation": {
+      "status": "PASS",
+      "details": "DELETE /api/keys/{id} revokes key, revoked key returns 401, revoked key not in active list"
+    },
+    "security_tab": {
+      "status": "PASS",
+      "details": "Security tab visible in Integrations page with comprehensive documentation"
+    },
+    "landing_page": {
+      "status": "PASS",
+      "details": "Landing page loads correctly with hero, stats, capabilities"
+    },
+    "text_translation": {
+      "status": "PASS",
+      "details": "Text translation works: 'Hello, how are you?' → 'Hola, ¿cómo estás?'"
+    }
+  },
+  "api_endpoints_tested": {
+    "GET /api/": "PASS - Returns status active, version 2.1",
+    "POST /api/keys/generate": "PASS - Creates key with pk_ prefix, scope, rate_limit, daily_cap",
+    "GET /api/keys": "PASS - Returns masked keys list",
+    "DELETE /api/keys/{id}": "PASS - Revokes key, returns 404 for non-existent",
+    "POST /api/v1/translate": "PASS - Works with valid key, 401 without/invalid key, 403 for insufficient scope, 429 for rate limit/daily cap",
+    "GET /api/supported-languages": "PASS - Returns 100+ spoken languages",
+    "GET /api/history": "PASS - Returns translation history",
+    "POST /api/translate": "PASS - Internal translate endpoint works",
+    "GET /api/docs/endpoints": "PASS - Returns API docs with security info"
+  },
+  "bug_fixed": {
+    "issue": "Revoked API keys were still working for translation",
+    "root_cause": "validate_api_key function queried by key_hash but didn't filter by 'active: True'",
+    "fix": "Added 'active: True' to the MongoDB query in validate_api_key",
+    "file": "/app/backend/server.py",
+    "line": 198
+  },
+  "mocked_apis": {
+    "note": "No mocked APIs. All features use real OpenAI integration via EMERGENT_LLM_KEY."
+  }
+}
