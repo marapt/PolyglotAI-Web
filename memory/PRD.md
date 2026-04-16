@@ -26,11 +26,17 @@ User wanted to recover their Polyglot AI project from a previous Emergent sessio
 ## What's Been Implemented (April 16, 2026)
 - Full backend with 7 API endpoints (/api/, /api/translate, /api/voice-translate, /api/sign-to-text, /api/text-to-sign, /api/history, /api/supported-languages)
 - Full React web frontend rebuilt from original Expo/React Native codebase
-- Swiss/High-Contrast design with Cabinet Grotesk font, IBM Plex Sans/Mono, International Klein Blue accent
-- Tab-based navigation (TEXT, VOICE, SIGN→TEXT, TEXT→SIGN, HISTORY)
+- **UI Redesign (Iteration 2)**: Modern, sleek design matching original mobile app screenshots
+  - Plus Jakarta Sans font, JetBrains Mono for code
+  - Indigo accent (#4F46E5), soft shadows, rounded-2xl corners
+  - Bottom tab navigation (mobile-style)
+  - Card-based layout with soft borders and hover effects
+  - Large circular mic button for voice recording
+  - "Take Photo" / "Choose from Gallery" buttons for sign language
+  - Info banners with light indigo background
 - Web MediaRecorder API for voice recording (replacing Expo Audio)
 - File upload/drag-drop for sign language images (replacing Expo Camera)
-- All features tested and passing (12/12 backend tests, all UI tests)
+- All features tested and passing (12/12 backend tests, all UI tests) across 2 iterations
 
 ## Prioritized Backlog
 ### P0 (Done)
