@@ -1,7 +1,7 @@
 # Polyglot AI - Universal Translation App PRD
 
 ## Original Problem Statement
-User wanted to recover their Polyglot AI project from a previous Emergent session (https://polyglotai-28.preview.emergentagent.com/) which had expired. The project was originally built with Expo/React Native (mobile) frontend and FastAPI backend. Source code was found on GitHub: https://github.com/marapt/Emergent-Universal-Translation-APP
+User wanted to recover their Polyglot AI project from a previous Emergent session (https://where-my-code.preview.emergentagent.com/) which had expired. The project was originally built with Expo/React Native (mobile) frontend and FastAPI backend. Source code was found on GitHub: https://github.com/marapt/Emergent-Universal-Translation-APP
 
 ## Architecture
 - **Backend**: FastAPI + MongoDB + OpenAI (via emergentintegrations library)
