@@ -40,11 +40,11 @@ function App() {
               <Translate size={20} weight="bold" className="text-white" />
             </div>
             <h1 className="text-xl font-extrabold tracking-tight">
-              Polyglot<span className="text-[var(--primary)]">AI</span>
+              AI<span className="text-[var(--primary)]">polyglots</span>
             </h1>
           </button>
           <span className="text-xs font-semibold text-[var(--muted-light)] tracking-wide hidden sm:block">
-            Universal Translator
+            aipolyglots.com
           </span>
         </div>
       </header>

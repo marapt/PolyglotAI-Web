@@ -1,4 +1,4 @@
-// PolyglotAI Chrome Extension - Popup Script
+// AIpolyglots Chrome Extension - Popup Script
 document.addEventListener("DOMContentLoaded", () => {
   const apiUrlInput = document.getElementById("apiUrl");
   const apiKeyInput = document.getElementById("apiKey");

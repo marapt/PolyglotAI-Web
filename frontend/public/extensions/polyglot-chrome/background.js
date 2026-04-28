@@ -1,8 +1,8 @@
-// PolyglotAI Chrome Extension - Background Service Worker
+// AIpolyglots Chrome Extension - Background Service Worker
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: "polyglot-translate",
-    title: "Translate with PolyglotAI",
+    title: "Translate with AIpolyglots",
     contexts: ["selection"],
   });
 });

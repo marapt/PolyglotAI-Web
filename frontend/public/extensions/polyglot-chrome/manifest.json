@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "PolyglotAI Translator",
-  "description": "Instantly translate selected text on any webpage. Powered by PolyglotAI.",
+  "name": "AIpolyglots Translator",
+  "description": "Instantly translate selected text on any webpage. Powered by AIpolyglots.",
   "version": "1.0.0",
   "permissions": ["storage", "contextMenus"],
   "action": {

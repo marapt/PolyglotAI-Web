@@ -1,4 +1,4 @@
-// PolyglotAI Translation Widget v1.0
+// AIpolyglots Translation Widget v1.0
 // Usage: Add this script to any webpage to enable instant text translation
 // Configure via window.PolyglotConfig before loading this script
 (function () {
@@ -11,7 +11,7 @@
   const DEFAULT_TARGET = config.defaultTarget || "en";
 
   if (!API_KEY || !API_URL) {
-    console.warn("[PolyglotAI] Missing apiKey or apiUrl in window.PolyglotConfig");
+    console.warn("[AIpolyglots] Missing apiKey or apiUrl in window.PolyglotConfig");
     return;
   }
 
@@ -183,7 +183,7 @@
   // Create floating button
   const btn = document.createElement("button");
   btn.id = "polyglot-widget-btn";
-  btn.title = "Translate with PolyglotAI";
+  btn.title = "Translate with AIpolyglots";
   btn.innerHTML = `<svg viewBox="0 0 256 256" fill="none"><path d="M239.15 212.42l-56-112a8 8 0 0 0-14.31 0l-21.71 43.43A88 88 0 0 1 100 126.93 103.65 103.65 0 0 0 127.7 64H152a8 8 0 0 0 0-16h-64V32a8 8 0 0 0-16 0v16H8a8 8 0 0 0 0 16h103.68A87.76 87.76 0 0 1 80 119.86a87.74 87.74 0 0 1-19.69-36.06 8 8 0 1 0-15.35 4.4 103.63 103.63 0 0 0 22.78 41.64A88.22 88.22 0 0 1 24 144a8 8 0 0 0 0 16 104.26 104.26 0 0 0 56-16.36 104.12 104.12 0 0 0 45.37 15.46l-24.52 49a8 8 0 0 0 14.31 7.16L128.84 188h70.32l13.68 27.37a8 8 0 0 0 14.31-7.16zM136.84 172L164 117.68 191.16 172z" fill="currentColor"/></svg>`;
   document.body.appendChild(btn);
 
@@ -193,7 +193,7 @@
   panel.innerHTML = `
     <div class="polyglot-header">
       <div class="polyglot-header-title">
-        <span>Polyglot</span>AI Translator
+        <span>AI</span>polyglots Translator
       </div>
       <button class="polyglot-close" id="polyglot-close">&times;</button>
     </div>
@@ -210,7 +210,7 @@
       <div class="polyglot-error" id="polyglot-error"></div>
     </div>
     <div class="polyglot-footer">
-      <a href="#" target="_blank">Powered by PolyglotAI</a>
+      <a href="https://aipolyglots.com" target="_blank">Powered by AIpolyglots</a>
     </div>
   `;
   document.body.appendChild(panel);
@@ -278,5 +278,5 @@
     }
   });
 
-  console.log("[PolyglotAI] Widget loaded successfully");
+  console.log("[AIpolyglots] Widget loaded successfully");
 })();

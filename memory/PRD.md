@@ -1,4 +1,4 @@
-# Polyglot AI - Universal Translation Platform PRD
+# AIpolyglots - Universal Translation Platform PRD
 
 ## Original Problem Statement
 User wanted to recover their Polyglot AI project from a previous Emergent session. Source code was found on GitHub: https://github.com/marapt/Emergent-Universal-Translation-APP. Originally built with Expo/React Native, rebuilt as a React web app. Then enhanced with integration capabilities (API, WhatsApp, Phone, Chrome Extension, Widget) and a product capabilities landing page.

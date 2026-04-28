@@ -245,7 +245,7 @@ async def validate_api_key(api_key: str, required_scope: str = "translate") -> d
 
 @api_router.get("/")
 async def root():
-    return {"message": "Polyglot AI Translation API", "status": "active", "version": "2.1"}
+    return {"message": "AIpolyglots Translation API", "status": "active", "version": "2.1"}
 
 
 @api_router.post("/translate", response_model=TranslationResponse)
@@ -451,7 +451,7 @@ async def voice_call_webhook(request: Request):
         if not speech_result:
             twiml = '''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    <Say voice="alice">Welcome to Polyglot AI. Speak in any language and I will translate to English.</Say>
+    <Say voice="alice">Welcome to AIpolyglots. Speak in any language and I will translate to English.</Say>
     <Gather input="speech" action="/api/webhooks/voice" method="POST" speechTimeout="auto" language="en-US">
         <Say voice="alice">Please speak now.</Say>
     </Gather>
@@ -477,7 +477,7 @@ async def voice_call_webhook(request: Request):
 @api_router.get("/docs/endpoints")
 async def api_docs():
     return {
-        "name": "Polyglot AI Translation API",
+        "name": "AIpolyglots Translation API",
         "version": "2.1",
         "base_url": "/api",
         "authentication": "Include header: X-Api-Key: your_api_key",

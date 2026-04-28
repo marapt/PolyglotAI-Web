@@ -96,7 +96,7 @@ export default function Integrations() {
   return (
     <div className="animate-fade-in" data-testid="integrations-page">
       <h2 className="text-xl font-bold mb-2">API & Integrations</h2>
-      <p className="text-sm text-[var(--muted)] mb-5">Connect Polyglot AI to any platform or build your own translation tools</p>
+      <p className="text-sm text-[var(--muted)] mb-5">Connect AIpolyglots to any platform or build your own translation tools</p>
 
       <div className="flex gap-2 overflow-x-auto mb-6 pb-1">
         {SECTIONS.map((s) => (
@@ -206,11 +206,11 @@ export default function Integrations() {
               <p className="text-xs text-amber-700 font-medium">Never hardcode API keys in source code. Always use environment variables. Leaked keys in public repos are scraped by bots within seconds.</p>
             </div>
             <CodeBlock code={`# Store your key in an environment variable
-export POLYGLOT_API_KEY="pk_your_key_here"
+export AIPOLYGLOTS_API_KEY="pk_your_key_here"
 
 curl -X POST ${BASE_URL}/api/v1/translate \\
   -H "Content-Type: application/json" \\
-  -H "X-Api-Key: $POLYGLOT_API_KEY" \\
+  -H "X-Api-Key: $AIPOLYGLOTS_API_KEY" \\
   -d '{
     "text": "Hello, how are you?",
     "source_language": "en",
@@ -243,7 +243,7 @@ curl -X POST ${BASE_URL}/api/v1/translate \\
 import requests
 
 # Always load keys from environment variables
-api_key = os.environ["POLYGLOT_API_KEY"]
+api_key = os.environ["AIPOLYGLOTS_API_KEY"]
 
 response = requests.post(
     "${BASE_URL}/api/v1/translate",
@@ -322,7 +322,7 @@ print(response.json()["translated_text"])
 
             <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200">
               <ShieldCheck size={16} weight="fill" className="text-amber-600 shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-700 font-medium">Your API key is stored locally in Chrome's sync storage. It is never sent to any third party — only to your Polyglot AI API endpoint.</p>
+              <p className="text-xs text-amber-700 font-medium">Your API key is stored locally in Chrome's sync storage. It is never sent to any third party — only to your AIpolyglots API endpoint.</p>
             </div>
           </div>
         </div>

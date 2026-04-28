@@ -57,7 +57,7 @@ const CAPABILITIES = [
     iconColor: "text-white",
     title: "API",
     subtitle: "Developer Tools",
-    description: "Integrate Polyglot AI into your own applications. REST API, embeddable widget, Chrome extension, and webhook support for any platform.",
+    description: "Integrate AIpolyglots into your own applications. REST API, embeddable widget, Chrome extension, and webhook support for any platform.",
     tab: "integrations",
     features: ["REST API with key auth", "Embeddable JS widget", "Chrome extension", "Webhook endpoints"],
   },
@@ -74,7 +74,7 @@ export default function Landing({ onNavigate }) {
           <div className="max-w-2xl">
             <div className="flex items-center gap-2 mb-4">
               <Globe size={18} weight="fill" className="text-[var(--primary)]" />
-              <span className="text-xs font-bold text-[var(--primary)] uppercase tracking-widest">Universal Translation Platform</span>
+              <span className="text-xs font-bold text-[var(--primary)] uppercase tracking-widest">aipolyglots.com</span>
             </div>
             <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight mb-4">
               Break every language barrier.{" "}
@@ -183,7 +183,7 @@ export default function Landing({ onNavigate }) {
       <div className="bg-white border-t border-[var(--border)]">
         <div className="max-w-5xl mx-auto px-5 py-10">
           <h3 className="text-xl font-bold mb-2">Works everywhere you communicate</h3>
-          <p className="text-sm text-[var(--muted)] mb-6">Connect Polyglot AI to your favorite platforms and tools</p>
+          <p className="text-sm text-[var(--muted)] mb-6">Connect AIpolyglots to your favorite platforms and tools</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
               { icon: WhatsappLogo, name: "WhatsApp", desc: "Bot translates messages", color: "text-green-600", bg: "bg-green-50" },

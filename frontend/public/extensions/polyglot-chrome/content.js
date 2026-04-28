@@ -1,4 +1,4 @@
-// PolyglotAI Chrome Extension - Content Script
+// AIpolyglots Chrome Extension - Content Script
 // Detects text selection and shows inline translation popup
 
 (function () {
@@ -40,7 +40,7 @@
     if (isLoading) {
       popup.innerHTML = `
         <div class="polyglot-ext-header">
-          <span class="polyglot-ext-brand"><strong>Polyglot</strong>AI</span>
+          <span class="polyglot-ext-brand"><strong>AI</strong>polyglots</span>
         </div>
         <div class="polyglot-ext-body">
           <div class="polyglot-ext-loading">
@@ -52,7 +52,7 @@
     } else {
       popup.innerHTML = `
         <div class="polyglot-ext-header">
-          <span class="polyglot-ext-brand"><strong>Polyglot</strong>AI</span>
+          <span class="polyglot-ext-brand"><strong>AI</strong>polyglots</span>
           <button class="polyglot-ext-close" id="polyglot-ext-close">&times;</button>
         </div>
         <div class="polyglot-ext-body">
