@@ -33,6 +33,14 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col" data-testid="app-container">
+      {/* Beta Notice Banner */}
+      <div className="bg-[var(--foreground)] text-white text-center py-2 px-4">
+        <p className="text-[11px] font-medium tracking-wide" data-testid="beta-banner">
+          <span className="inline-block px-1.5 py-0.5 rounded bg-[var(--primary)] text-[10px] font-bold uppercase tracking-wider mr-2">Beta</span>
+          AI Polyglots is an experimental platform for AI-driven global expansion. Private portfolio demo &mdash; non-commercial use only.
+        </p>
+      </div>
+
       <header className="bg-white border-b border-[var(--border)] sticky top-0 z-50" data-testid="app-header">
         <div className="max-w-5xl mx-auto px-5 py-4 flex items-center justify-between">
           <button onClick={() => setActiveTab("home")} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity" data-testid="logo-btn">
