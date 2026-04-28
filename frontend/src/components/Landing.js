@@ -208,6 +208,18 @@ export default function Landing({ onNavigate }) {
           </div>
         </div>
       </div>
+
+      {/* Footer Disclaimers */}
+      <div className="border-t border-[var(--border)] bg-[var(--bg)]">
+        <div className="max-w-5xl mx-auto px-5 py-6 space-y-2 text-center">
+          <p className="text-[11px] text-[var(--muted-light)]">
+            AI Polyglots is an experimental platform for AI-driven global expansion.
+          </p>
+          <p className="text-[11px] text-[var(--muted-light)]">
+            Not affiliated with WhatsApp, Twilio, or any third-party translation services. All trademarks belong to their respective owners.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
