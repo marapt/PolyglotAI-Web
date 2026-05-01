@@ -21,12 +21,25 @@ from collections import defaultdict
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+# --- Database Setup (Hardened) ---
+try:
+    mongo_url = os.environ.get('MONGO_URL')
+    db_name = os.environ.get('DB_NAME', 'aipolyglots')
+    
+    if mongo_url:
+        client = AsyncIOMotorClient(mongo_url)
+        db = client[db_name]
+        logger.info(f"Connected to MongoDB: {db_name}")
+    else:
+        logger.warning("MONGO_URL not found. Database features will be simulated.")
+        db = None
+except Exception as e:
+    logger.error(f"Database connection error: {e}")
+    db = None
 
 # Translation powered by MyMemory (free, no API key required)
 MYMEMORY_API = "https://api.mymemory.translated.net/get"
+
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
@@ -214,11 +227,18 @@ async def validate_api_key(api_key: str, required_scope: str = "translate") -> d
     if not api_key:
         raise HTTPException(status_code=401, detail="Missing API key. Include X-Api-Key header.")
 
+    if db is None:
+        # Simulate successful validation for demo keys if no DB
+        if api_key.startswith("pk_demo"):
+            return {"name": "Demo User", "scope": "full", "rate_limit": 100}
+        raise HTTPException(status_code=401, detail="Database not connected. Use 'pk_demo' for testing.")
+
     key_hash = hash_key(api_key)
     key_doc = await db.api_keys.find_one({"key_hash": key_hash, "active": True}, {"_id": 0})
 
     if not key_doc:
         raise HTTPException(status_code=401, detail="Invalid API key.")
+
 
     # Check scope
     scope = key_doc.get("scope", "translate")
@@ -275,7 +295,8 @@ async def translate_text(request: TranslationRequest):
         original_text=request.text, translated_text=translated,
         source_language=request.source_language, target_language=request.target_language
     )
-    await db.translations.insert_one(response.model_dump())
+    if db:
+        await db.translations.insert_one(response.model_dump())
     return response
 
 
@@ -298,7 +319,8 @@ async def voice_translate(request: VoiceTranslationRequest):
 async def sign_to_text(request: SignLanguageRequest):
     interpreted = await interpret_sign_language_demo(request.image_base64, request.target_language)
     response = SignLanguageResponse(interpreted_text=interpreted, target_language=request.target_language)
-    await db.sign_interpretations.insert_one(response.model_dump())
+    if db:
+        await db.sign_interpretations.insert_one(response.model_dump())
     return response
 
 
@@ -306,12 +328,15 @@ async def sign_to_text(request: SignLanguageRequest):
 async def text_to_sign(request: TextToSignRequest):
     description = await generate_sign_description(request.text, request.sign_language)
     response = TextToSignResponse(text=request.text, sign_description=description, sign_language=request.sign_language)
-    await db.text_to_sign.insert_one(response.model_dump())
+    if db:
+        await db.text_to_sign.insert_one(response.model_dump())
     return response
 
 
 @api_router.get("/history")
 async def get_history(limit: int = 50):
+    if db is None:
+        return {"history": [], "count": 0, "message": "Demo mode: History disabled."}
     translations = await db.translations.find({}, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
     return {"history": translations, "count": len(translations)}
 
@@ -379,7 +404,10 @@ async def generate_api_key(request: ApiKeyCreate):
         "last_used": None,
         "active": True
     }
-    await db.api_keys.insert_one(doc)
+    if db:
+        await db.api_keys.insert_one(doc)
+    else:
+        logger.warning(f"Demo Key Generated (not persisted): {raw_key}")
 
     return ApiKeyResponse(
         id=doc["id"], name=doc["name"], key=raw_key,
@@ -536,10 +564,13 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup_db():
-    await db.translations.create_index([("timestamp", -1)])
-    await db.api_keys.create_index([("key_hash", 1)], unique=True)
-    await db.api_keys.create_index([("id", 1)])
-    logger.info("Database indexes created")
+    if db is not None:
+        await db.translations.create_index([("timestamp", -1)])
+        await db.api_keys.create_index([("key_hash", 1)], unique=True)
+        await db.api_keys.create_index([("id", 1)])
+        logger.info("Database indexes created")
+    else:
+        logger.info("Startup: Skipping database index creation (Demo Mode)")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
