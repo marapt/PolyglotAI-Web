@@ -21,6 +21,11 @@ from collections import defaultdict
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+
+# --- Logging Setup ---
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
 # --- Database Setup (Hardened) ---
 try:
     mongo_url = os.environ.get('MONGO_URL')
@@ -41,11 +46,10 @@ except Exception as e:
 MYMEMORY_API = "https://api.mymemory.translated.net/get"
 
 
+
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
 
 
 # ==================== RATE LIMITER ====================
