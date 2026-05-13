@@ -5,13 +5,69 @@
 
 ---
 
+## 📊 Before & After: What n8n Changes
+
+### Current State (Before n8n)
+
+| Area | Current Behaviour | Problem |
+|------|------------------|---------|
+| **WhatsApp** | Hardcoded Twilio webhook in `server.py` (~50 lines) | Broken in production. Any fix requires a code deploy. |
+| **Voice** | Hardcoded Twilio webhook in `server.py` | Works but tightly coupled. Hard to modify or extend. |
+| **Email** | Not implemented | No way to receive translation requests via email. |
+| **Slack** | Not implemented | No way to reach the translation engine from Slack. |
+| **Monitoring** | None | No alerts if the backend goes down on Render. |
+| **New channels** | Each requires new FastAPI route + Twilio/SDK code + deploy | High friction to expand reach. |
+
+### Future State (After n8n)
+
+| Area | New Behaviour | Improvement |
+|------|--------------|-------------|
+| **WhatsApp** | n8n receives Twilio webhook → calls backend → replies | Fixed and decoupled. Change behaviour in n8n UI, no code deploy needed. |
+| **Email** | Gmail/SendGrid → n8n → translate → reply | New channel live with ~20 mins of n8n config. |
+| **Slack** | Slash command → n8n → translate → post reply | Adds a B2B/team-friendly entry point. |
+| **Monitoring** | 5-min cron → health check → alert | Know about outages before users do. |
+| **New channels** | Add a new n8n workflow node | Telegram, Teams, etc. in minutes — no backend code. |
+
+---
+
+## 🧠 Learnings & Honest Assessment
+
+### Is n8n actually improving the product?
+
+**Short answer: It improves *distribution*, not *product quality*.**
+
+| What it improves | What it doesn't improve |
+|-----------------|------------------------|
+| ✅ Number of channels users can reach the translator through | ❌ Translation quality (still using MyMemory free API) |
+| ✅ Operational reliability (monitoring, alerts) | ❌ Core UX on aipolyglots.com — website experience is unchanged |
+| ✅ Developer velocity for adding new integrations | ❌ Retention or conversion — new channels don't fix underlying product gaps |
+| ✅ Fixes the broken WhatsApp integration | ❌ Doesn't add any AI/ML capability |
+
+### When is this the right investment?
+
+n8n makes sense **if** the translation quality is already good enough that more users would use it if only they could reach it more easily (WhatsApp, email, Slack). If the core product on aipolyglots.com still has reliability issues (500 errors, slow responses, poor quality), those are higher-priority fixes than adding channels.
+
+**Current risk:** We're routing more users to a backend that sometimes returns 500 errors and uses a free translation engine (MyMemory). More channels = more surface area for failures.
+
+### Recommended sequencing (honest priority order)
+
+1. **First:** Ensure the core `/api/translate` endpoint is rock-solid with proper error handling and a quality translation engine (OpenAI/Anthropic)
+2. **Then:** Add n8n to expand reach — because now more users hitting the system will have a good experience
+3. **Not yet:** Batch jobs and Slack are nice-to-haves; focus on WhatsApp + monitoring first
+
+### What this adds to your portfolio/demo story
+
+- Shows understanding of **workflow orchestration** and **agentic pipelines** — relevant to AgenticLab brand
+- Demonstrates **multi-channel API design** thinking
+- n8n is widely used in enterprise — good talking point for GTM/BD conversations
+
+---
+
 ## 📋 Progress Legend
 - `[ ]` — Not started
 - `[~]` — In progress
 - `[x]` — Complete
 - `[!]` — Blocked / needs user action
-
----
 
 ## 🏗️ Phase 0: Architecture Decisions
 
