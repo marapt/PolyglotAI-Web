@@ -228,6 +228,50 @@ Three options for securing the n8n → AI Polyglots backend connection:
 
 ### 3.5 Regression Tests
 - [ ] `pytest tests/ -v` — all green including new n8n tests
+- [ ] `python3 tests/test_n8n_integration.py -v` — all integration tests green
+
+### 3.6 Real-World UAT — WhatsApp + Twilio (Manual)
+> This is the full human test. Run this AFTER all automated tests pass.
+
+**Pre-requisites:**
+- [ ] Twilio sandbox or production number is active
+- [ ] Twilio WhatsApp webhook URL is set to `https://aipolyglots.app.n8n.cloud/webhook/n8n`
+- [ ] n8n workflow is activated (toggle ON in n8n dashboard)
+- [ ] Render is running the `feature/n8n-integration` build
+
+**Test as a real user:**
+
+- [ ] **Basic auto-translate (→ English)**
+  1. Save the Twilio WhatsApp number to contacts on your personal phone
+  2. Open WhatsApp and send: `Bonjour, comment ça va?`
+  3. ✅ Expected reply: `Hello, how are you?` (or similar English translation)
+
+- [ ] **Targeted language translation**
+  1. Send: `/to es Good morning, my name is Mara`
+  2. ✅ Expected reply: `Buenos días, me llamo Mara`
+
+- [ ] **Multi-word message with numbers/symbols**
+  1. Send: `/to fr My order #12345 arrives on Monday at 3pm`
+  2. ✅ Expected reply contains French translation with number preserved
+
+- [ ] **Empty message handling**
+  1. Send a blank message or just spaces
+  2. ✅ Expected: bot replies with usage instructions (not a crash)
+
+- [ ] **Unknown language code**
+  1. Send: `/to zz Hello`
+  2. ✅ Expected: graceful error message, not a 500
+
+- [ ] **Verify end-to-end latency**
+  - Note time from send → reply received
+  - ✅ Acceptable: under 10 seconds
+  - ⚠️ Flag if over 15 seconds (Render cold start issue)
+
+**Twilio account requirements:**
+- Active Twilio account: https://console.twilio.com
+- WhatsApp Sandbox or approved production number
+- Sandbox join code sent to test phone (if using sandbox: `join [word]-[word]`)
+- Webhook URL configured: Messaging → Sandbox Settings → When a message comes in
 
 ---
 
