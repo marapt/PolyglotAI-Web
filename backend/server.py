@@ -537,7 +537,91 @@ async def voice_call_webhook(request: Request):
         return HTMLResponse(content='<?xml version="1.0" encoding="UTF-8"?><Response><Say>Error. Please try again.</Say></Response>', media_type="application/xml")
 
 
-# ==================== API DOCS ====================
+# ==================== n8n INTEGRATION WEBHOOK ====================
+
+class N8NWebhookRequest(BaseModel):
+    action: str                          # "translate" | "voice-translate" | "sign-to-text"
+    text: Optional[str] = None           # Source text for translate / voice
+    audio_base64: Optional[str] = None  # Base64 audio for voice-translate
+    image_base64: Optional[str] = None  # Base64 image for sign-to-text
+    source_language: str = "auto-detect"
+    target_language: str = "en"
+    from_number: Optional[str] = None   # Originating phone number (WhatsApp etc.)
+    metadata: Optional[Dict[str, Any]] = None  # Arbitrary passthrough data
+
+@api_router.post("/webhooks/n8n")
+async def n8n_webhook(request: Request, body: N8NWebhookRequest):
+    """
+    Generic inbound webhook for n8n workflow automation.
+    Routes to the correct translation handler based on the `action` field.
+    Secured via X-N8N-API-Key header matching the N8N_WEBHOOK_SECRET env var.
+    """
+    # --- Auth ---
+    n8n_secret = os.environ.get("N8N_WEBHOOK_SECRET")
+    provided_key = request.headers.get("X-N8N-API-Key", "")
+    if n8n_secret and provided_key != n8n_secret:
+        logger.warning(f"n8n webhook: invalid API key from {request.client.host}")
+        raise HTTPException(status_code=403, detail="Invalid or missing X-N8N-API-Key header")
+
+    try:
+        action = body.action.lower().strip()
+        logger.info(f"n8n webhook received: action={action}, from={body.from_number}")
+
+        # --- Route: Text Translation ---
+        if action == "translate":
+            if not body.text:
+                raise HTTPException(status_code=400, detail="'text' field is required for action=translate")
+            translated = await translate_with_mymemory(body.text, body.source_language, body.target_language)
+            result = {
+                "action": "translate",
+                "original_text": body.text,
+                "translated_text": translated,
+                "source_language": body.source_language,
+                "target_language": body.target_language,
+                "from": body.from_number,
+            }
+            if db:
+                try:
+                    await db.n8n_events.insert_one({**result, "timestamp": datetime.now(timezone.utc).isoformat()})
+                except Exception as e:
+                    logger.error(f"n8n webhook DB log error: {e}")
+            return result
+
+        # --- Route: Voice Translation ---
+        elif action == "voice-translate":
+            if not body.audio_base64:
+                raise HTTPException(status_code=400, detail="'audio_base64' field is required for action=voice-translate")
+            transcribed = await transcribe_audio_demo(body.audio_base64, body.source_language)
+            translated = await translate_with_mymemory(transcribed, body.source_language, body.target_language)
+            return {
+                "action": "voice-translate",
+                "transcribed_text": transcribed,
+                "translated_text": translated,
+                "source_language": body.source_language,
+                "target_language": body.target_language,
+            }
+
+        # --- Route: Sign Language to Text ---
+        elif action == "sign-to-text":
+            if not body.image_base64:
+                raise HTTPException(status_code=400, detail="'image_base64' field is required for action=sign-to-text")
+            interpreted = await interpret_sign_language_demo(body.image_base64, body.target_language)
+            return {
+                "action": "sign-to-text",
+                "interpreted_text": interpreted,
+                "target_language": body.target_language,
+            }
+
+        else:
+            raise HTTPException(status_code=400, detail=f"Unknown action '{action}'. Valid: translate, voice-translate, sign-to-text")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"n8n webhook error: {e}")
+        raise HTTPException(status_code=500, detail="Internal error processing n8n webhook")
+
+
 
 @api_router.get("/docs/endpoints")
 async def api_docs():
@@ -563,6 +647,7 @@ async def api_docs():
             {"method": "GET", "path": "/supported-languages", "description": "List languages", "auth": False},
             {"method": "POST", "path": "/webhooks/whatsapp", "description": "WhatsApp webhook", "auth": False},
             {"method": "POST", "path": "/webhooks/voice", "description": "Voice call webhook", "auth": False},
+            {"method": "POST", "path": "/webhooks/n8n", "description": "n8n automation webhook (requires X-N8N-API-Key header)", "auth": True},
         ]
     }
 

@@ -91,3 +91,81 @@ def test_voice_webhook_post():
     assert response.headers["content-type"].startswith("application/xml")
     assert "<Response>" in response.text
     assert "<Say" in response.text
+
+
+# ==================== n8n WEBHOOK TESTS ====================
+
+def test_n8n_webhook_translate_no_secret():
+    """When N8N_WEBHOOK_SECRET is not set, endpoint should accept any request (open mode)"""
+    os.environ.pop("N8N_WEBHOOK_SECRET", None)  # ensure not set
+    payload = {
+        "action": "translate",
+        "text": "Hello world",
+        "source_language": "en",
+        "target_language": "es"
+    }
+    response = client.post("/api/webhooks/n8n", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["action"] == "translate"
+    assert "translated_text" in data
+    assert data["original_text"] == "Hello world"
+
+
+def test_n8n_webhook_translate_with_valid_secret():
+    """With N8N_WEBHOOK_SECRET set, valid key should pass"""
+    os.environ["N8N_WEBHOOK_SECRET"] = "test-secret-123"
+    payload = {
+        "action": "translate",
+        "text": "Good morning",
+        "source_language": "en",
+        "target_language": "fr"
+    }
+    response = client.post(
+        "/api/webhooks/n8n",
+        json=payload,
+        headers={"X-N8N-API-Key": "test-secret-123"}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "translated_text" in data
+    os.environ.pop("N8N_WEBHOOK_SECRET", None)
+
+
+def test_n8n_webhook_invalid_api_key():
+    """With N8N_WEBHOOK_SECRET set, wrong key must return 403"""
+    os.environ["N8N_WEBHOOK_SECRET"] = "correct-secret"
+    payload = {
+        "action": "translate",
+        "text": "Hello",
+        "source_language": "en",
+        "target_language": "de"
+    }
+    response = client.post(
+        "/api/webhooks/n8n",
+        json=payload,
+        headers={"X-N8N-API-Key": "wrong-key"}
+    )
+    assert response.status_code == 403
+    os.environ.pop("N8N_WEBHOOK_SECRET", None)
+
+
+def test_n8n_webhook_unknown_action():
+    """Unknown action should return 400"""
+    payload = {
+        "action": "delete-everything",
+        "text": "test"
+    }
+    response = client.post("/api/webhooks/n8n", json=payload)
+    assert response.status_code == 400
+
+
+def test_n8n_webhook_translate_missing_text():
+    """translate action without text field should return 400"""
+    payload = {
+        "action": "translate",
+        "source_language": "en",
+        "target_language": "es"
+    }
+    response = client.post("/api/webhooks/n8n", json=payload)
+    assert response.status_code == 400

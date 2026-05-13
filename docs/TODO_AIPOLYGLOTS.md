@@ -17,17 +17,22 @@
 
 ## 🔴 Critical (Fix Before Adding Features)
 
-- [ ] **Upgrade translation engine from MyMemory → OpenAI/Anthropic**
-  - **Why:** MyMemory is a free, community-powered engine with inconsistent quality, character limits, and no domain specialization. Users trying to translate technical, legal, or medical content will get poor results.
-  - **Impact:** This is the single highest-leverage change. Better output quality = more retention, more trust.
-  - **Effort:** Low — the OpenAI SDK is already in the codebase. Needs `OPENAI_API_KEY` wired to the translate endpoint.
-  - **Risk of NOT doing this:** All n8n channel work (WhatsApp, Email, Slack) routes more users to a poor-quality engine.
+- [ ] **Upgrade translation engine from MyMemory → better free alternative**
+  - **Why:** MyMemory has a 500 char/req limit and inconsistent quality on technical content.
+  - **Free options available (no new cost):**
+    | Engine | Cost | Quality | Notes |
+    |--------|------|---------|-------|
+    | **MyMemory** (current) | Free | ⭐⭐ | 500 char limit, community-powered |
+    | **OpenAI GPT-3.5-turbo** | ~$0.001/1k tokens ≈ free | ⭐⭐⭐⭐⭐ | **Already have API key** — best option |
+    | **DeepL Free API** | 500k chars/month free | ⭐⭐⭐⭐ | Separate API key needed |
+    | **LibreTranslate** | Free (self-hosted) | ⭐⭐⭐ | Requires Render service |
+  - **Recommendation:** Use existing `OPENAI_API_KEY` with GPT-3.5-turbo. Already installed, near-zero cost at low volume, vastly better quality.
+  - **Status:** ⏳ Deferred — doing n8n channel integration first per decision 2026-05-13.
 
 - [ ] **Harden `/api/translate` error handling**
   - **Why:** Backend occasionally returns 500 errors, causing CORS failures visible to users.
-  - **Impact:** Every 500 error is a lost user. Fixing this makes the whole app more reliable.
   - **Effort:** Low — try/except wrappers already partially added; needs completion + fallback message.
-  - **Status:** Partially done (startup_db hardened). Translate endpoint itself needs similar treatment.
+  - **Status:** Partially done (startup_db hardened). Translate endpoint needs same treatment.
 
 ---
 
