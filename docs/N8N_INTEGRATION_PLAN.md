@@ -3,6 +3,9 @@
 > **Target:** Merge to `main` only when all tasks marked `[x]` and E2E tests pass  
 > **Last Updated:** 2026-05-13
 
+> [!IMPORTANT]  
+> **Read first:** Before investing heavily in these workflows, review [TODO_AIPOLYGLOTS.md](./TODO_AIPOLYGLOTS.md) for high-yield improvements. Upgrading the translation engine from MyMemory → OpenAI/Anthropic will have more user impact than adding new channels and should be prioritized first.
+
 ---
 
 ## 📊 Before & After: What n8n Changes
