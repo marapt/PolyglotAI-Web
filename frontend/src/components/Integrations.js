@@ -335,11 +335,19 @@ print(response.json()["translated_text"])
             <h3 className="text-base font-bold mb-1 flex items-center gap-2">
               <WhatsappLogo size={18} weight="fill" className="text-green-600" /> WhatsApp Translation Bot
             </h3>
-            <p className="text-xs text-[var(--muted)] mb-4">
+            <p className="text-xs text-[var(--muted)] mb-3">
               Powered by <strong>n8n workflow automation</strong> + Twilio. Send any message to the bot and get an instant translation reply.
             </p>
 
-            {/* How users interact */}
+            {/* Clarification: WhatsApp vs Twilio */}
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-blue-50 border border-blue-200 mb-4">
+              <span className="text-blue-600 text-base shrink-0">ℹ️</span>
+              <div className="text-xs text-blue-800">
+                <strong>You use your regular WhatsApp app</strong> — no Twilio account needed as a user. Just message the AI Polyglots number like any normal contact.<br /><br />
+                <strong>Twilio is invisible to the user.</strong> It's a WhatsApp Business API partner that operators (like us) use to receive and send WhatsApp messages programmatically. Think of it as the plumbing behind the scenes — Meta owns WhatsApp, Twilio connects to it on the business side.
+              </div>
+            </div>
+
             <div className="bg-green-50 rounded-xl p-4 mb-4">
               <h4 className="text-sm font-bold text-green-700 mb-3">📱 How to use it</h4>
               <ol className="space-y-1.5 text-xs text-green-900 mb-3">
