@@ -159,9 +159,9 @@ Three options for securing the n8n → AI Polyglots backend connection:
 > ⚠️ Requires n8n account. Sign up at https://n8n.io before starting this phase.
 
 ### 2.0 Account Setup
-- [!] Sign up at https://n8n.io (free cloud tier)
-- [!] Note webhook base URL (e.g. `https://[name].app.n8n.cloud/webhook/...`)
-- [!] Add `N8N_WEBHOOK_SECRET` value to both n8n (as a credential) and Render (as env var)
+- [x] Sign up at https://n8n.io — ✅ 14-day free trial active (2026-05-13)
+- [!] Share your n8n instance URL (e.g. `https://[name].app.n8n.cloud`)
+- [!] Add `N8N_WEBHOOK_SECRET` value to Render env vars + n8n credentials
 
 ### 2.1 WhatsApp Translation (Priority 1 — Replace Broken Webhook)
 - [ ] Create workflow: **"WhatsApp Inbound Translation"**
