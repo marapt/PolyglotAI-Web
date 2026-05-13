@@ -58,14 +58,25 @@
 
 ## 🟢 Growth / Distribution (Do After Core Is Solid)
 
-- [ ] **n8n WhatsApp workflow** *(see N8N_INTEGRATION_PLAN.md)*
+- [~] **n8n WhatsApp workflow** *(see N8N_INTEGRATION_PLAN.md)*
   - **Why:** Fixes broken WhatsApp integration. Expands reach to mobile-first users.
-  - **Pre-requisite:** Translation engine upgrade should happen first.
+  - **Status:** Workflow built in n8n, backend endpoint coded. Awaiting Render deploy + Twilio URL update.
 
 - [ ] **n8n Email translation pipeline**
 - [ ] **n8n Slack bot**
 - [ ] **n8n Health Monitor**
 - [ ] **n8n Batch translation job**
+
+- [ ] **Update https://aipolyglots.com website content to reflect new channels**
+  - **Trigger:** Do this AFTER n8n WhatsApp + at least one other channel is fully live and tested
+  - **What to update:**
+    - Hero section: add WhatsApp as an access method (with phone number / QR code)
+    - Features section: add "Translate via WhatsApp", "Email Translation", "Slack Bot" feature cards
+    - How It Works: update to show the multi-channel diagram
+    - Add a dedicated "Get Started on WhatsApp" CTA with the Twilio number
+    - Footer: add WhatsApp contact link
+  - **Effort:** Medium — frontend-only changes, no backend needed
+  - **Files to edit:** `frontend/src/` components (likely `App.jsx` or equivalent)
 
 ---
 
