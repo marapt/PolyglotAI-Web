@@ -335,35 +335,60 @@ print(response.json()["translated_text"])
             <h3 className="text-base font-bold mb-1 flex items-center gap-2">
               <WhatsappLogo size={18} weight="fill" className="text-green-600" /> WhatsApp Translation Bot
             </h3>
-            <p className="text-xs text-[var(--muted)] mb-4">Any developer can connect their Twilio account. No credentials needed on our end.</p>
+            <p className="text-xs text-[var(--muted)] mb-4">
+              Powered by <strong>n8n workflow automation</strong> + Twilio. Send any message to the bot and get an instant translation reply.
+            </p>
 
+            {/* How users interact */}
             <div className="bg-green-50 rounded-xl p-4 mb-4">
-              <h4 className="text-sm font-bold text-green-700 mb-2">How to set up</h4>
-              <ol className="space-y-1.5 text-xs text-green-900">
-                <li>1. Create a <a href="https://www.twilio.com/whatsapp" target="_blank" rel="noopener noreferrer" className="underline font-semibold">Twilio account</a> with WhatsApp Sandbox</li>
-                <li>2. Set your webhook URL to:</li>
+              <h4 className="text-sm font-bold text-green-700 mb-3">📱 How to use it</h4>
+              <ol className="space-y-1.5 text-xs text-green-900 mb-3">
+                <li>1. Save the AI Polyglots WhatsApp number to your contacts</li>
+                <li>2. Send any message — the bot auto-detects language and translates to English</li>
+                <li>3. To translate to a specific language, use: <code className="bg-green-100 px-1 rounded">/to [code] [text]</code></li>
               </ol>
-              <CodeBlock code={`${BASE_URL}/api/webhooks/whatsapp`} />
-              <ol start={3} className="space-y-1.5 text-xs text-green-900 mt-2">
-                <li>3. Send a message to your Twilio WhatsApp number</li>
-                <li>4. The bot auto-detects language and translates to English</li>
-                <li>5. Use <code className="bg-green-100 px-1 rounded">/to es Hello world</code> to translate to Spanish</li>
+              <div className="space-y-2">
+                <div className="p-3 rounded-xl bg-white border border-green-200 text-sm">
+                  <span className="font-semibold">You:</span> Bonjour, comment allez-vous?<br />
+                  <span className="font-semibold text-green-700">Bot:</span> Hello, how are you?
+                </div>
+                <div className="p-3 rounded-xl bg-white border border-green-200 text-sm">
+                  <span className="font-semibold">You:</span> /to es Good morning, my name is Mara<br />
+                  <span className="font-semibold text-green-700">Bot:</span> Buenos días, me llamo Mara
+                </div>
+                <div className="p-3 rounded-xl bg-white border border-green-200 text-sm">
+                  <span className="font-semibold">You:</span> /to ja Thank you for your patience<br />
+                  <span className="font-semibold text-green-700">Bot:</span> ご辛抱いただきありがとうございます
+                </div>
+              </div>
+              <p className="text-[10px] text-green-700 mt-3 font-medium">
+                Supported language codes: es · fr · de · pt · ja · zh · ar · hi · ko · it · ru · and 50+ more
+              </p>
+            </div>
+
+            {/* Developer setup */}
+            <div className="bg-gray-50 rounded-xl p-4 mb-4 border border-[var(--border)]">
+              <h4 className="text-sm font-bold text-gray-700 mb-2">🔧 Developer setup (connect your own Twilio account)</h4>
+              <ol className="space-y-1.5 text-xs text-gray-700 mb-3">
+                <li>1. Create a <a href="https://www.twilio.com/whatsapp" target="_blank" rel="noopener noreferrer" className="underline font-semibold text-[var(--primary)]">Twilio account</a> with WhatsApp Sandbox</li>
+                <li>2. In Twilio console → Messaging → Sandbox Settings, set <strong>When a message comes in</strong> to:</li>
+              </ol>
+              <CodeBlock code={`https://aipolyglots.app.n8n.cloud/webhook/n8n`} />
+              <ol start={3} className="space-y-1.5 text-xs text-gray-700 mt-3">
+                <li>3. Join the sandbox from your phone (send the join code to the Twilio number)</li>
+                <li>4. Send a message — n8n routes it to the AI Polyglots backend and replies automatically</li>
               </ol>
             </div>
 
-            <div className="space-y-2">
-              <div className="p-3 rounded-xl bg-[var(--bg)] text-sm">
-                <span className="font-semibold">You:</span> Bonjour, comment allez-vous?<br />
-                <span className="font-semibold text-[var(--primary)]">Bot:</span> Hello, how are you?
-              </div>
-              <div className="p-3 rounded-xl bg-[var(--bg)] text-sm">
-                <span className="font-semibold">You:</span> /to ja Good morning!<br />
-                <span className="font-semibold text-[var(--primary)]">Bot:</span> おはようございます！
-              </div>
+            {/* Pipeline diagram */}
+            <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-800">
+              <p className="font-bold mb-1">⚡ How the pipeline works</p>
+              <p className="font-mono">WhatsApp msg → Twilio → n8n → AI Polyglots API → n8n → Twilio → WhatsApp reply</p>
             </div>
           </div>
         </div>
       )}
+
 
       {/* ==================== PHONE CALLS ==================== */}
       {activeSection === "phone" && (
