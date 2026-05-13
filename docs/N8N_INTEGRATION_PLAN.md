@@ -1,6 +1,6 @@
 # 🔗 AI Polyglots × n8n Integration Plan
 > **Branch:** `feature/n8n-integration`  
-> **Target:** Merge to `main` only when all tasks marked ✅ and E2E tests pass  
+> **Target:** Merge to `main` only when all tasks marked `[x]` and E2E tests pass  
 > **Last Updated:** 2026-05-13
 
 ---
@@ -13,72 +13,137 @@
 
 ---
 
-## 🏗️ Phase 0: Setup & Prerequisites
+## 🏗️ Phase 0: Architecture Decisions
 
-### Repo & Branch
-- [x] Create `feature/n8n-integration` branch from `main`
-- [ ] Confirm branch is tracking on remote: `git push -u origin feature/n8n-integration`
+### Decision 1: n8n Hosting
 
-### n8n Account (⚠️ USER ACTION REQUIRED)
-- [!] Sign up at https://n8n.io (free cloud tier — 5 workflows, 2500 executions/month)
-- [!] Note your **webhook base URL** (format: `https://[name].app.n8n.cloud/webhook/...`)
-- [!] Note your **n8n API key** (Settings → API → Create Key)
+| Option | Cost | Setup Time | Workflows | Executions/mo | Verdict |
+|--------|------|-----------|-----------|--------------|---------|
+| **n8n Cloud Free** | $0 | 5 mins | **5 max** | 2,500 | ✅ Start here (MVP) |
+| **n8n Cloud Paid** | $20/mo | 5 mins | Unlimited | 5,000+ | Good for growth |
+| **Self-hosted on Render** | ~$7/mo (Postgres) | ~1 hr | Unlimited | Unlimited | Best long-term |
+
+> ⚠️ **Free tier has 5 workflow limit.** Our plan has 4 workflows (WhatsApp, Email, Monitor, Batch) so free tier works for MVP. If you add more channels later, upgrade to paid or self-host.
+>
+> ✅ **Render stays as-is.** Self-hosting n8n on Render means adding a *second* service alongside the existing FastAPI backend — it does NOT replace or affect your current backend. Vercel (frontend) is completely unaffected by n8n regardless of hosting choice.
+
+**Selected:** n8n Cloud Free Tier → migrate to self-hosted Render when workflows exceed 4.
+
+---
+
+### Decision 2: Channel Priority
+
+| Priority | Channel | Status | Notes |
+|----------|---------|--------|-------|
+| 1️⃣ | **WhatsApp** | 🔴 Broken in prod | Replace current hardcoded Twilio webhook |
+| 2️⃣ | **Email** | ⚪ Not built | Gmail/SendGrid inbound → translate → reply |
+| 3️⃣ | **Slack** | ⚪ Not built | Slash command `/translate [lang] [text]` |
+| 4️⃣ | **Batch (MongoDB)** | ⚪ Not built | Scheduled overnight job for queued jobs |
+
+---
+
+### Decision 3: API Key Authentication Strategy
+
+Three options for securing the n8n → AI Polyglots backend connection:
+
+| Option | How It Works | Security | Cost | Complexity | Best For |
+|--------|-------------|----------|------|-----------|---------|
+| **A: Env Var Secret** (Recommended) | `N8N_WEBHOOK_SECRET` stored in Render env vars. n8n sends it as `X-N8N-API-Key` header. Backend checks it. | Medium | $0 | Low | MVP, internal tools |
+| **B: Existing `/api/keys/generate`** | Generate a user-style API key in MongoDB, pass it from n8n. | Medium | $0 | Low | Works, but mixes internal + user-facing auth |
+| **C: JWT Token** | n8n generates a signed JWT; backend validates signature. | High | $0 | High | Enterprise / public-facing APIs |
+
+> **Recommendation: Option A** for MVP.  
+> - Fastest to implement (one env var, one header check)  
+> - Zero DB dependency (works even if MongoDB is down)  
+> - Isolated from user-facing API keys  
+> - Easy to rotate: just change the env var in Render dashboard  
+> 
+> Option B is tempting but couples your internal auth to your user management system — if a user's key gets compromised it could affect internal workflows too.  
+> Option C is overkill for a private n8n→backend channel.
+
+**Selected:** Option A — `N8N_WEBHOOK_SECRET` environment variable.
 
 ---
 
 ## 🔧 Phase 1: Backend Changes (AI Polyglots `server.py`)
 
-### 1.1 Generic n8n Webhook Endpoint
-- [ ] Add `POST /api/webhooks/n8n` endpoint to `server.py`
-  - Accepts JSON payload from n8n
-  - Routes to translate/voice/sign handler based on `action` field
-  - Returns JSON result back to n8n
+### 1.0 Branch Setup
+- [x] Create `feature/n8n-integration` branch from `main`
+- [x] Branch tracking on remote (`git push -u origin feature/n8n-integration`)
 
-### 1.2 API Key Security
-- [ ] Add `X-N8N-API-Key` header validation to the n8n webhook endpoint
-- [ ] Generate a dedicated internal API key for n8n→backend auth (store in Render env vars as `N8N_WEBHOOK_SECRET`)
+### 1.1 Generic n8n Webhook Endpoint
+- [ ] Add `POST /api/webhooks/n8n` to `server.py`
+  - Accept JSON with `action` field: `"translate"`, `"voice-translate"`, `"sign-to-text"`
+  - Route to correct handler based on `action`
+  - Return JSON result to n8n
+
+### 1.2 API Key Security (Option A)
+- [ ] Add `X-N8N-API-Key` header check to the new endpoint
+- [ ] Read `N8N_WEBHOOK_SECRET` from environment variable
+- [ ] Return `403 Forbidden` if header missing or doesn't match
+- [ ] Add `N8N_WEBHOOK_SECRET` to Render dashboard environment variables
 
 ### 1.3 CORS Update
-- [ ] Add n8n cloud domain to allowed origins in CORS middleware
-  - e.g., `https://[name].app.n8n.cloud`
+- [ ] Add n8n cloud domain to CORS allowed origins
+  - `https://[your-name].app.n8n.cloud`
+  - Update after account is created with actual URL
 
 ### 1.4 Backend Tests
-- [ ] Add pytest test for `POST /api/webhooks/n8n` with a mock translation payload
-- [ ] Confirm test passes locally: `pytest tests/test_api.py -v`
+- [ ] Add `test_n8n_webhook_translate()` to `tests/test_api.py`
+- [ ] Add `test_n8n_webhook_invalid_key()` (must return 403)
+- [ ] Confirm all tests pass: `pytest tests/test_api.py -v`
 
 ---
 
-## 🔀 Phase 2: n8n Workflow Builds (⚠️ REQUIRES n8n ACCOUNT)
+## 🔀 Phase 2: n8n Workflow Builds
 
-### 2.1 WhatsApp Translation Workflow (Priority 1)
-- [ ] Create new workflow: **"WhatsApp Inbound Translation"**
-- [ ] Add **Webhook** trigger node (copy URL — this replaces the current Twilio webhook)
-- [ ] Add **HTTP Request** node → `POST https://aipolyglots-api.onrender.com/api/webhooks/n8n`
-  - Body: `{ "action": "translate", "text": "{{$json.Body}}", "from": "{{$json.From}}" }`
-  - Header: `X-N8N-API-Key: [N8N_WEBHOOK_SECRET]`
-- [ ] Add **Twilio** node → send translated text back as WhatsApp reply
+> ⚠️ Requires n8n account. Sign up at https://n8n.io before starting this phase.
+
+### 2.0 Account Setup
+- [!] Sign up at https://n8n.io (free cloud tier)
+- [!] Note webhook base URL (e.g. `https://[name].app.n8n.cloud/webhook/...`)
+- [!] Add `N8N_WEBHOOK_SECRET` value to both n8n (as a credential) and Render (as env var)
+
+### 2.1 WhatsApp Translation (Priority 1 — Replace Broken Webhook)
+- [ ] Create workflow: **"WhatsApp Inbound Translation"**
+- [ ] Add **Webhook** trigger node → copy the URL
+- [ ] Add **HTTP Request** node:
+  - `POST https://aipolyglots-api.onrender.com/api/webhooks/n8n`
+  - Body: `{ "action": "translate", "text": "{{$json.Body}}", "from": "{{$json.From}}", "target_language": "en" }`
+  - Header: `X-N8N-API-Key: {{ $env.N8N_WEBHOOK_SECRET }}`
+- [ ] Add **Twilio** node → send `translated_text` back as WhatsApp reply
 - [ ] Activate workflow
-- [ ] Update Twilio webhook URL to point to the new n8n webhook URL
+- [ ] Update Twilio console: change WhatsApp webhook URL to the n8n webhook URL
 
-### 2.2 Email Translation Pipeline (Priority 2)
+### 2.2 Email Translation (Priority 2)
 - [ ] Create workflow: **"Email Inbound Translation"**
-- [ ] Trigger: Gmail / SendGrid webhook on new email received
-- [ ] Parse email body → call `/api/webhooks/n8n` with `action: translate`
-- [ ] Reply with translated content via Gmail node
+- [ ] Trigger: Gmail webhook (new email label or inbox)
+- [ ] Extract email body → `POST /api/webhooks/n8n` with `action: translate`
+- [ ] Reply to sender with translated output via Gmail node
+- [ ] Activate workflow
 
-### 2.3 API Health Monitor (Priority 3)
+### 2.3 Slack Translation Bot (Priority 3)
+- [ ] Create workflow: **"Slack /translate Command"**
+- [ ] Trigger: Slack slash command webhook
+- [ ] Parse `text` field (format: `/translate [lang] [text]`)
+- [ ] Call `/api/webhooks/n8n`
+- [ ] Post translation result back to Slack channel
+- [ ] Activate workflow
+
+### 2.4 Scheduled Batch Translations (Priority 4)
+- [ ] Create workflow: **"Nightly Batch Translations"**
+- [ ] Trigger: Cron — daily at 6am UTC
+- [ ] Read pending jobs from MongoDB (via HTTP to a new `/api/queue` endpoint)
+- [ ] Loop: call `/api/webhooks/n8n` for each job
+- [ ] Update MongoDB record status to `"completed"`
+- [ ] Activate workflow
+
+### 2.5 API Health Monitor (Bonus)
 - [ ] Create workflow: **"AI Polyglots Health Monitor"**
 - [ ] Trigger: Cron every 5 minutes
-- [ ] HTTP Request to `GET https://aipolyglots-api.onrender.com/api/`
-- [ ] If NOT 200 → send Slack/email alert
+- [ ] `GET https://aipolyglots-api.onrender.com/api/`
+- [ ] If response != 200 → send alert (Slack or email)
 - [ ] Activate workflow
-
-### 2.4 Batch Translation Job (Priority 4)
-- [ ] Create workflow: **"Scheduled Batch Translations"**
-- [ ] Trigger: Cron daily 6am
-- [ ] Query MongoDB for pending translation jobs
-- [ ] Loop + call `/api/webhooks/n8n` for each
-- [ ] Update records with results
 
 ---
 
@@ -86,58 +151,65 @@
 
 ### 3.1 WhatsApp Flow
 - [ ] Send test WhatsApp message to Twilio number
-- [ ] Confirm message arrives at n8n webhook (check n8n executions log)
-- [ ] Confirm `/api/webhooks/n8n` receives the call (check Render logs)
-- [ ] Confirm translated reply is received on WhatsApp
+- [ ] Confirm message arrives at n8n (check n8n Executions log)
+- [ ] Confirm `/api/webhooks/n8n` called (check Render logs)
+- [ ] Confirm translated reply arrives on WhatsApp
 
-### 3.2 API Monitor
-- [ ] Manually trigger health check workflow
-- [ ] Confirm success response logged
-- [ ] Temporarily break the API, confirm alert fires
+### 3.2 Email Flow
+- [ ] Send test email to configured inbox
+- [ ] Confirm translated reply received
 
-### 3.3 Regression Tests
-- [ ] Run full pytest suite: `pytest tests/ -v`
-- [ ] All existing tests still pass
-- [ ] New n8n webhook test passes
+### 3.3 Slack Flow
+- [ ] Run `/translate es Hello world` in Slack
+- [ ] Confirm `Hola mundo` reply posted to channel
+
+### 3.4 Security Test
+- [ ] Call `/api/webhooks/n8n` with wrong API key → must return `403`
+- [ ] Call with no header → must return `403`
+
+### 3.5 Regression Tests
+- [ ] `pytest tests/ -v` — all green including new n8n tests
 
 ---
 
-## 🚀 Phase 4: Deployment to Production
+## 🚀 Phase 4: Merge to Production
 
 ### Pre-Merge Checklist
-- [ ] All Phase 1, 2, 3 tasks marked `[x]`
-- [ ] `pytest tests/ -v` — all green
-- [ ] Render env var `N8N_WEBHOOK_SECRET` set in dashboard
-- [ ] Twilio webhook URL updated to n8n URL (NOT pointing directly to backend anymore)
-- [ ] CORS verified (n8n calls not blocked)
+- [ ] All Phase 1–3 tasks marked `[x]`
+- [ ] `pytest tests/ -v` all green
+- [ ] `N8N_WEBHOOK_SECRET` set in Render dashboard
+- [ ] Twilio webhook URL updated to n8n URL
+- [ ] CORS updated with actual n8n cloud URL
 
-### Merge Steps
+### Merge Commands
 ```bash
 git checkout main
 git merge feature/n8n-integration
 git push origin main
 ```
 
-- [ ] Merge PR on GitHub: `feature/n8n-integration` → `main`
-- [ ] Confirm Render auto-deploys from main
-- [ ] Confirm Vercel frontend still loads (no regressions)
-- [ ] Send one final WhatsApp test message on production
+- [ ] Merge PR: `feature/n8n-integration` → `main` on GitHub
+- [ ] Confirm Render auto-deploys
+- [ ] Confirm Vercel frontend loads (no regressions)
+- [ ] Send final WhatsApp test message on production
 
 ---
 
-## 📝 Notes & Decisions Log
+## 📝 Decisions Log
 
 | Date | Decision | Outcome |
 |------|----------|---------|
-| 2026-05-13 | Scoped Phase 1 to WhatsApp first | Agreed — highest priority since it's broken on live site |
-| 2026-05-13 | Hosting: n8n cloud (free tier) for MVP | Revisit self-hosted on Render post-launch |
-| 2026-05-13 | Auth: dedicated `N8N_WEBHOOK_SECRET` header | Keeps it isolated from user-facing API keys |
+| 2026-05-13 | **Hosting:** n8n Cloud Free Tier for MVP | ✅ 5 workflow max; covers all 4 planned channels. Self-host on Render when >4 needed. |
+| 2026-05-13 | **Render status:** Stays as-is | ✅ n8n is an *additional* service, not a replacement. FastAPI backend unchanged. |
+| 2026-05-13 | **Channel priority:** WhatsApp → Email → Slack → Batch | ✅ WhatsApp is broken in prod — highest urgency |
+| 2026-05-13 | **Auth:** Option A — `N8N_WEBHOOK_SECRET` env var | ✅ Fastest, safest, zero DB dependency. Do NOT use `/api/keys/generate`. |
 
 ---
 
 ## 🔗 References
 - [n8n cloud signup](https://n8n.io)
-- [Existing architecture notes](./n8n_architecture.md)
+- [Existing n8n architecture notes](./n8n_architecture.md)
 - [AI Polyglots backend](../backend/server.py)
 - [Test suite](../tests/test_api.py)
 - [Render dashboard](https://dashboard.render.com)
+- [Twilio console](https://console.twilio.com)
