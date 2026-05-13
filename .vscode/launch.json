@@ -1,0 +1,31 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Run API Tests",
+            "type": "python",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "../tests"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/backend",
+            "justMyCode": false
+        },
+        {
+            "name": "Python: Run FastAPI Backend",
+            "type": "python",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": [
+                "server:app",
+                "--reload",
+                "--port",
+                "8000"
+            ],
+            "cwd": "${workspaceFolder}/backend",
+            "console": "integratedTerminal"
+        }
+    ]
+}

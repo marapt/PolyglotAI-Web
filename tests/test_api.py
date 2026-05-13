@@ -49,3 +49,45 @@ def test_supported_languages():
     assert "spoken_languages" in data
     assert "sign_languages" in data
     assert "en" in data["spoken_languages"]
+
+def test_whatsapp_webhook_get():
+    """Test WhatsApp verification endpoint"""
+    response = client.get("/api/webhooks/whatsapp")
+    assert response.status_code == 200
+    assert response.json()["status"] == "WhatsApp webhook active"
+
+def test_whatsapp_webhook_post():
+    """Test WhatsApp translation message payload"""
+    # Simulate a Twilio/WhatsApp urlencoded form submission
+    data = {
+        "Body": "Hello world",
+        "From": "whatsapp:+1234567890"
+    }
+    response = client.post("/api/webhooks/whatsapp", data=data)
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/xml")
+    assert "<Response><Message>" in response.text
+    # The output should contain the translated text
+
+def test_whatsapp_webhook_post_with_command():
+    """Test WhatsApp explicit translation command"""
+    data = {
+        "Body": "/to fr Good morning",
+        "From": "whatsapp:+1234567890"
+    }
+    response = client.post("/api/webhooks/whatsapp", data=data)
+    assert response.status_code == 200
+    assert "<Response><Message>" in response.text
+    assert "Bonjour" in response.text or "bon matin" in response.text.lower()
+
+def test_voice_webhook_post():
+    """Test Voice webhook (Twilio speech recognition payload)"""
+    data = {
+        "SpeechResult": "What time is it?",
+        "From": "+1234567890"
+    }
+    response = client.post("/api/webhooks/voice", data=data)
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/xml")
+    assert "<Response>" in response.text
+    assert "<Say" in response.text
