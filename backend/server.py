@@ -300,7 +300,10 @@ async def translate_text(request: TranslationRequest):
         source_language=request.source_language, target_language=request.target_language
     )
     if db:
-        await db.translations.insert_one(response.model_dump())
+        try:
+            await db.translations.insert_one(response.model_dump())
+        except Exception as e:
+            logger.error(f"Failed to log translation to DB: {e}")
     return response
 
 
@@ -315,7 +318,11 @@ async def voice_translate(request: VoiceTranslationRequest):
     )
     save_doc = response.model_dump()
     save_doc.pop('audio_base64', None)
-    await db.voice_translations.insert_one(save_doc)
+    if db:
+        try:
+            await db.voice_translations.insert_one(save_doc)
+        except Exception as e:
+            logger.error(f"Failed to log voice translation to DB: {e}")
     return response
 
 
@@ -324,7 +331,10 @@ async def sign_to_text(request: SignLanguageRequest):
     interpreted = await interpret_sign_language_demo(request.image_base64, request.target_language)
     response = SignLanguageResponse(interpreted_text=interpreted, target_language=request.target_language)
     if db:
-        await db.sign_interpretations.insert_one(response.model_dump())
+        try:
+            await db.sign_interpretations.insert_one(response.model_dump())
+        except Exception as e:
+            logger.error(f"Failed to log sign interpretation to DB: {e}")
     return response
 
 
@@ -333,7 +343,10 @@ async def text_to_sign(request: TextToSignRequest):
     description = await generate_sign_description(request.text, request.sign_language)
     response = TextToSignResponse(text=request.text, sign_description=description, sign_language=request.sign_language)
     if db:
-        await db.text_to_sign.insert_one(response.model_dump())
+        try:
+            await db.text_to_sign.insert_one(response.model_dump())
+        except Exception as e:
+            logger.error(f"Failed to log text-to-sign to DB: {e}")
     return response
 
 
