@@ -160,19 +160,19 @@ Three options for securing the n8n → AI Polyglots backend connection:
 
 ### 2.0 Account Setup
 - [x] Sign up at https://n8n.io — ✅ 14-day free trial active (2026-05-13)
-- [!] Share your n8n instance URL (e.g. `https://[name].app.n8n.cloud`)
-- [!] Add `N8N_WEBHOOK_SECRET` value to Render env vars + n8n credentials
+- [x] n8n instance URL: `https://aipolyglots.app.n8n.cloud`
+- [x] `N8N_WEBHOOK_SECRET` = `aipolyglots-n8n-2026` set in Render env vars ✅
 
 ### 2.1 WhatsApp Translation (Priority 1 — Replace Broken Webhook)
-- [ ] Create workflow: **"WhatsApp Inbound Translation"**
-- [ ] Add **Webhook** trigger node → copy the URL
-- [ ] Add **HTTP Request** node:
-  - `POST https://aipolyglots-api.onrender.com/api/webhooks/n8n`
-  - Body: `{ "action": "translate", "text": "{{$json.Body}}", "from": "{{$json.From}}", "target_language": "en" }`
-  - Header: `X-N8N-API-Key: {{ $env.N8N_WEBHOOK_SECRET }}`
-- [ ] Add **Twilio** node → send `translated_text` back as WhatsApp reply
-- [ ] Activate workflow
-- [ ] Update Twilio console: change WhatsApp webhook URL to the n8n webhook URL
+- [x] Create workflow: **"Aipolyglots Webhook to API"** (saved + published in n8n)
+- [x] Webhook trigger node configured: POST, path=`n8n`
+- [x] HTTP Request node: `POST https://aipolyglots-api.onrender.com/api/webhooks/n8n` with `X-N8N-API-Key` header ✅
+- [x] Test execution successful (1/1 in n8n Executions log)
+- [~] **OPEN:** Add "Respond to Webhook" node to return TwiML XML to Twilio (current response is JSON — Twilio needs `<Response><Message>...</Message></Response>`)
+- [ ] Update Twilio console WhatsApp webhook URL to: `https://aipolyglots.app.n8n.cloud/webhook/n8n`
+- [ ] Activate/confirm workflow is live in n8n (publish confirmed, verify toggle is ON)
+
+> **Production webhook URL:** `https://aipolyglots.app.n8n.cloud/webhook/n8n`
 
 ### 2.2 Email Translation (Priority 2)
 - [ ] Create workflow: **"Email Inbound Translation"**
