@@ -582,10 +582,13 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_db():
     if db is not None:
-        await db.translations.create_index([("timestamp", -1)])
-        await db.api_keys.create_index([("key_hash", 1)], unique=True)
-        await db.api_keys.create_index([("id", 1)])
-        logger.info("Database indexes created")
+        try:
+            await db.translations.create_index([("timestamp", -1)])
+            await db.api_keys.create_index([("key_hash", 1)], unique=True)
+            await db.api_keys.create_index([("id", 1)])
+            logger.info("Database indexes created")
+        except Exception as e:
+            logger.error(f"Failed to create database indexes (timeout or connection error): {e}")
     else:
         logger.info("Startup: Skipping database index creation (Demo Mode)")
 
