@@ -73,6 +73,12 @@
       "last 1 safari version"
     ]
   },
+  "overrides": {
+    "react-day-picker": {
+      "react": "^19.0.0",
+      "react-dom": "^19.0.0"
+    }
+  },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@craco/craco": "^7.1.0",
