@@ -42,6 +42,10 @@
   - **Why:** Differentiates from free tools. Users can choose speed vs quality.
   - **Effort:** Medium — UI dropdown + backend routing logic.
 
+- [ ] **WhatsApp: Smart Locale & User Memory** *(see WHATSAPP_LOCALE_MEMORY.md)*
+  - **Why:** Removes friction. Auto-detects target language based on user's country code (e.g., `+55` -> Portuguese) and allows persistent MongoDB overrides ("set my language to French").
+  - **Effort:** Medium — MongoDB `user_preferences` collection + Python `phonenumbers` library parsing.
+
 - [ ] **Add translation quality indicator / confidence score**
   - **Why:** Helps users know when to trust the output vs review manually.
   - **Effort:** Medium — can be approximated using back-translation comparison.
@@ -61,6 +65,10 @@
 - [x] **n8n WhatsApp workflow** *(see N8N_INTEGRATION_PLAN.md)*
   - **Why:** Fixes broken WhatsApp integration. Expands reach to mobile-first users.
   - **Status:** ✅ Fully LIVE. Webhook running via n8n, rendering natural language parser & custom welcome message.
+
+- [ ] **WhatsApp: Production Twilio Number**
+  - **Why:** Removes the sandbox `join subject-birth` barrier, enabling a true "click link and go" BYOP experience.
+  - **Effort:** External — Requires Meta Business verification and Twilio application.
 
 - [ ] **n8n Email translation pipeline**
 - [ ] **n8n Slack bot**
@@ -85,6 +93,10 @@
 - [ ] **Real-time video conversation translation** *(text, voice, sign language)*
   - High complexity — WebRTC + streaming + sign language model integration.
   - Document requirements before starting.
+
+- [ ] **WhatsApp: Relay / Proxy Model** *(see WHATSAPP_STRATEGY.md)*
+  - **Why:** Evolves the bot from a "personal translator" (Bot Model) to a "real-time communication bridge" between two real users.
+  - **Effort:** High — requires session management, pairing codes ("Room ID"), and outbound messaging logic.
 
 - [ ] **Glossary enforcement** (ensure custom terms survive translation)
 - [ ] **XLIFF/PO file round-trip quality validation**
