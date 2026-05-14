@@ -166,11 +166,15 @@ Three options for securing the n8n → AI Polyglots backend connection:
 ### 2.1 WhatsApp Translation (Priority 1 — Replace Broken Webhook)
 - [x] Create workflow: **"Aipolyglots Webhook to API"** (saved + published in n8n)
 - [x] Webhook trigger node configured: POST, path=`n8n`
-- [x] HTTP Request node: `POST https://aipolyglots-api.onrender.com/api/webhooks/n8n` with `X-N8N-API-Key` header ✅
+- [x] HTTP Request node: `POST https://aipolyglots-backend.onrender.com/api/webhooks/n8n` with `X-N8N-API-Key` header ✅
 - [x] Test execution successful (1/1 in n8n Executions log)
-- [~] **OPEN:** Add "Respond to Webhook" node to return TwiML XML to Twilio (current response is JSON — Twilio needs `<Response><Message>...</Message></Response>`)
-- [ ] Update Twilio console WhatsApp webhook URL to: `https://aipolyglots.app.n8n.cloud/webhook/n8n`
-- [ ] Activate/confirm workflow is live in n8n (publish confirmed, verify toggle is ON)
+- [x] **"Respond to Webhook" node added** — returns TwiML `<Response><Message>={{ $json.translated_text }}</Message></Response>` ✅
+- [x] Webhook node Response Mode set to "Using Respond to Webhook Node" ✅
+- [x] Workflow published (3 nodes live)
+- [x] Update Twilio console WhatsApp webhook URL to: `https://aipolyglots.app.n8n.cloud/webhook/n8n` ✅
+- [x] Run real-world UAT test — **PASSED** ✅ 🎉 WhatsApp message translated and delivered successfully!
+
+> **🟢 STATUS: FULLY LIVE as of 2026-05-13**
 
 > **Production webhook URL:** `https://aipolyglots.app.n8n.cloud/webhook/n8n`
 
@@ -200,7 +204,7 @@ Three options for securing the n8n → AI Polyglots backend connection:
 ### 2.5 API Health Monitor (Bonus)
 - [ ] Create workflow: **"AI Polyglots Health Monitor"**
 - [ ] Trigger: Cron every 5 minutes
-- [ ] `GET https://aipolyglots-api.onrender.com/api/`
+- [ ] `GET https://aipolyglots-backend.onrender.com/api/`
 - [ ] If response != 200 → send alert (Slack or email)
 - [ ] Activate workflow
 
@@ -208,11 +212,11 @@ Three options for securing the n8n → AI Polyglots backend connection:
 
 ## ✅ Phase 3: End-to-End Testing
 
-### 3.1 WhatsApp Flow
-- [ ] Send test WhatsApp message to Twilio number
-- [ ] Confirm message arrives at n8n (check n8n Executions log)
-- [ ] Confirm `/api/webhooks/n8n` called (check Render logs)
-- [ ] Confirm translated reply arrives on WhatsApp
+### 3.1 WhatsApp Flow ✅ COMPLETE
+- [x] Send test WhatsApp message to Twilio number
+- [x] Confirm message arrives at n8n (check n8n Executions log)
+- [x] Confirm `/api/webhooks/n8n` called (check Render logs)
+- [x] Confirm translated reply arrives on WhatsApp — **"Ola tudo bem?" → "Hello, how are you?"** 🎉
 
 ### 3.2 Email Flow
 - [ ] Send test email to configured inbox
