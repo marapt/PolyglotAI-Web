@@ -4,6 +4,8 @@ from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from fastapi.responses import HTMLResponse, JSONResponse
 import httpx
+import openai
+from openai import AsyncOpenAI
 import os
 import logging
 from pathlib import Path
@@ -44,6 +46,10 @@ except Exception as e:
 
 # Translation powered by MyMemory (free, no API key required)
 MYMEMORY_API = "https://api.mymemory.translated.net/get"
+
+# OpenAI Configuration
+openai_client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini") # Cost-effective and high quality
 
 
 
@@ -277,6 +283,48 @@ def is_greeting(text: str) -> bool:
 
 
 
+async def translate_with_openai(text: str, source_lang: str, target_lang: str) -> str:
+    """Translate text using OpenAI's high-quality models."""
+    if not openai_client.api_key:
+        raise ValueError("OpenAI API key not configured")
+        
+    src = "auto-detect" if source_lang in ("auto", "auto-detect", "autodetect") else source_lang
+    
+    # Professional localization prompt
+    system_prompt = (
+        f"You are a professional translator. Translate the text from {src} to {target_lang}. "
+        "Maintain the original tone, formatting, and intent. "
+        "Only return the translated text. Do not provide explanations or alternatives."
+    )
+    
+    try:
+        response = await openai_client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": text}
+            ],
+            temperature=0.1,
+            max_tokens=2000
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        logger.error(f"OpenAI translation failed: {e}")
+        raise
+
+async def translate_text(text: str, source_lang: str, target_lang: str) -> str:
+    """Unified translation entry point with multi-tier fallbacks."""
+    # Tier 1: OpenAI (Premium Quality, Low Cost)
+    if openai_client.api_key:
+        try:
+            return await translate_with_openai(text, source_lang, target_lang)
+        except Exception:
+            logger.warning("Tier 1 (OpenAI) failed, falling back to Tier 2 (MyMemory)")
+            
+    # Tier 2 & 3: MyMemory and LibreTranslate (Free Fallbacks)
+    return await translate_with_mymemory(text, source_lang, target_lang)
+
+
 async def translate_with_mymemory(text: str, source_lang: str, target_lang: str) -> str:
     """Translate text using MyMemory (primary) with LibreTranslate fallback. Both free, no key required."""
     src = "autodetect" if source_lang in ("auto", "auto-detect", "autodetect") else source_lang
@@ -421,7 +469,7 @@ async def root():
 
 @api_router.post("/translate", response_model=TranslationResponse)
 async def translate_text(request: TranslationRequest):
-    translated = await translate_with_mymemory(request.text, request.source_language, request.target_language)
+    translated = await translate_text(request.text, request.source_language, request.target_language)
     response = TranslationResponse(
         original_text=request.text, translated_text=translated,
         source_language=request.source_language, target_language=request.target_language
@@ -437,7 +485,7 @@ async def translate_text(request: TranslationRequest):
 @api_router.post("/voice-translate", response_model=VoiceTranslationResponse)
 async def voice_translate(request: VoiceTranslationRequest):
     transcribed = await transcribe_audio_demo(request.audio_base64, request.source_language)
-    translated = await translate_with_mymemory(transcribed, request.source_language, request.target_language)
+    translated = await translate_text(transcribed, request.source_language, request.target_language)
     audio_base64 = await text_to_speech_demo(translated)
     response = VoiceTranslationResponse(
         transcribed_text=transcribed, translated_text=translated, audio_base64=audio_base64,
@@ -590,7 +638,7 @@ async def public_translate(request: WidgetTranslateRequest, x_api_key: str = Hea
     """Public translation endpoint with key auth, rate limiting, and usage tracking."""
     await validate_api_key(x_api_key, required_scope="translate")
     source = request.source_language if request.source_language != "auto" else "auto-detect"
-    translated = await translate_with_mymemory(request.text, source, request.target_language)
+    translated = await translate_text(request.text, source, request.target_language)
     return {"translated_text": translated, "source_language": request.source_language, "target_language": request.target_language}
 
 
@@ -598,7 +646,7 @@ async def public_translate(request: WidgetTranslateRequest, x_api_key: str = Hea
 async def widget_translate(request: WidgetTranslateRequest, x_api_key: str = Header(None)):
     await validate_api_key(x_api_key, required_scope="translate")
     source = request.source_language if request.source_language != "auto" else "auto-detect"
-    translated = await translate_with_mymemory(request.text, source, request.target_language)
+    translated = await translate_text(request.text, source, request.target_language)
     return {"translated_text": translated}
 
 
@@ -621,7 +669,7 @@ async def whatsapp_webhook(request: Request):
         if not body:
             return HTMLResponse(content='<Response><Message>Send me any text and I\'ll translate it! Use "/to es Hello" to translate to Spanish.</Message></Response>', media_type="application/xml")
 
-        translated = await translate_with_mymemory(body, "auto-detect", to_language)
+        translated = await translate_text(body, "auto-detect", to_language)
         twiml = f'<Response><Message>{translated}</Message></Response>'
         return HTMLResponse(content=twiml, media_type="application/xml")
     except Exception as e:
@@ -650,7 +698,7 @@ async def voice_call_webhook(request: Request):
 </Response>'''
             return HTMLResponse(content=twiml, media_type="application/xml")
 
-        translated = await translate_with_mymemory(speech_result, "auto-detect", "en")
+        translated = await translate_text(speech_result, "auto-detect", "en")
         twiml = f'''<?xml version="1.0" encoding="UTF-8"?>
 <Response>
     <Say voice="alice">{translated}</Say>
@@ -775,7 +823,7 @@ async def n8n_webhook(request: Request, body: N8NWebhookRequest):
             if body.target_language and body.target_language not in ("en", ""):
                 tgt_lang = body.target_language
 
-            translated = await translate_with_mymemory(parsed_text, src_lang, tgt_lang)
+            translated = await translate_text(parsed_text, src_lang, tgt_lang)
             result = {
                 "action": "translate",
                 "original_text": parsed_text,
@@ -797,7 +845,7 @@ async def n8n_webhook(request: Request, body: N8NWebhookRequest):
             if not body.audio_base64:
                 raise HTTPException(status_code=400, detail="'audio_base64' field is required for action=voice-translate")
             transcribed = await transcribe_audio_demo(body.audio_base64, body.source_language)
-            translated = await translate_with_mymemory(transcribed, body.source_language, body.target_language)
+            translated = await translate_text(transcribed, body.source_language, body.target_language)
             return {
                 "action": "voice-translate",
                 "transcribed_text": transcribed,

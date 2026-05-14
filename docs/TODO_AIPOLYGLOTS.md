@@ -17,17 +17,9 @@
 
 ## 🔴 Critical (Fix Before Adding Features)
 
-- [ ] **Upgrade translation engine from MyMemory → better free alternative**
+- [x] **Upgrade translation engine from MyMemory → OpenAI (gpt-4o-mini)**
   - **Why:** MyMemory has a 500 char/req limit and inconsistent quality on technical content.
-  - **Free options available (no new cost):**
-    | Engine | Cost | Quality | Notes |
-    |--------|------|---------|-------|
-    | **MyMemory** (current) | Free | ⭐⭐ | 500 char limit, community-powered |
-    | **OpenAI GPT-3.5-turbo** | ~$0.001/1k tokens ≈ free | ⭐⭐⭐⭐⭐ | **Already have API key** — best option |
-    | **DeepL Free API** | 500k chars/month free | ⭐⭐⭐⭐ | Separate API key needed |
-    | **LibreTranslate** | Free (self-hosted) | ⭐⭐⭐ | Requires Render service |
-  - **Recommendation:** Use existing `OPENAI_API_KEY` with GPT-3.5-turbo. Already installed, near-zero cost at low volume, vastly better quality.
-  - **Status:** ⏳ Deferred — doing n8n channel integration first per decision 2026-05-13.
+  - **Status:** ✅ Fixed (OpenAI gpt-4o-mini integrated as Tier 1, with MyMemory/LibreTranslate as fallbacks).
 
 - [x] **Harden `/api/translate` error handling**
   - **Why:** Backend occasionally returns 500 errors, causing CORS failures visible to users.

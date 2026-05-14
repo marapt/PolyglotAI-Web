@@ -7,3 +7,4 @@ python-multipart>=0.0.9
 starlette>=0.37.2
 httpx>=0.24.0
 phonenumbers>=8.13.0
+openai>=1.0.0
