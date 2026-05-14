@@ -342,7 +342,7 @@ print(response.json()["translated_text"])
             {/* ── CTA: Try it now ── */}
             <div className="bg-green-600 rounded-2xl p-5 mb-4 text-white text-center">
               <p className="text-sm font-bold mb-1">Try AI Polyglots on WhatsApp</p>
-              <p className="text-xs opacity-80 mb-3">Send any text in any language — get an instant translation back</p>
+              <p className="text-xs opacity-80 mb-3">No app download. No sign-up. Just tap and go.</p>
               <a
                 href="https://wa.me/14155238886?text=Hello"
                 target="_blank"
@@ -352,25 +352,25 @@ print(response.json()["translated_text"])
                 <WhatsappLogo size={16} weight="fill" /> Open in WhatsApp
               </a>
               <p className="text-[10px] opacity-60 mt-3">
-                ⚠️ Sandbox mode: First, send <code className="bg-green-700 px-1 rounded">join subject-birth</code> to connect
+                Uses your existing WhatsApp — no new account needed
               </p>
             </div>
 
-            {/* Clarification: WhatsApp vs Twilio */}
+            {/* Clarification: BYOP model */}
             <div className="flex items-start gap-2 p-3 rounded-xl bg-blue-50 border border-blue-200 mb-4">
               <span className="text-blue-600 text-base shrink-0">ℹ️</span>
               <div className="text-xs text-blue-800">
-                <strong>You use your regular WhatsApp app</strong> — no Twilio account needed as a user. Just message the AI Polyglots number like any normal contact.<br /><br />
-                <strong>Twilio is invisible to the user.</strong> It's a WhatsApp Business API partner that operators (like us) use to receive and send WhatsApp messages programmatically. Think of it as the plumbing behind the scenes — Meta owns WhatsApp, Twilio connects to it on the business side.
+                <strong>Bring Your Own Phone.</strong> You use your existing WhatsApp number — no new account, no app download, no registration. Save the AI Polyglots number as a contact, send a message, and start translating instantly.<br /><br />
+                <strong>Your phone number is your identity.</strong> The bot recognizes you automatically and can remember your preferred language across conversations.
               </div>
             </div>
 
             <div className="bg-green-50 rounded-xl p-4 mb-4">
-              <h4 className="text-sm font-bold text-green-700 mb-3">📱 How to use it</h4>
+              <h4 className="text-sm font-bold text-green-700 mb-3">📱 3 steps to get started</h4>
               <ol className="space-y-1.5 text-xs text-green-900 mb-3">
-                <li>1. Save the AI Polyglots WhatsApp number to your contacts</li>
-                <li>2. Send any message — the bot auto-detects language and translates to English</li>
-                <li>3. To translate to a specific language, use: <code className="bg-green-100 px-1 rounded">/to [code] [text]</code></li>
+                <li>1. Tap <strong>"Open in WhatsApp"</strong> above — the number is pre-filled</li>
+                <li>2. Send any message to start (the link pre-fills <em>"Hello"</em> for you)</li>
+                <li>3. Forward or type any text in any language — get a translation back instantly</li>
               </ol>
               <div className="space-y-2">
                 <div className="p-3 rounded-xl bg-white border border-green-200 text-sm">
