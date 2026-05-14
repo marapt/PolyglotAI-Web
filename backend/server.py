@@ -94,6 +94,8 @@ class TranslationResponse(BaseModel):
     translated_text: str
     source_language: str
     target_language: str
+    channel: str = "web"
+    user_identifier: Optional[str] = None
     timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class VoiceTranslationRequest(BaseModel):
@@ -108,6 +110,8 @@ class VoiceTranslationResponse(BaseModel):
     audio_base64: Optional[str] = None
     source_language: str
     target_language: str
+    channel: str = "voice"
+    user_identifier: Optional[str] = None
     timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class SignLanguageRequest(BaseModel):
@@ -463,6 +467,17 @@ async def validate_api_key(api_key: str, required_scope: str = "translate") -> d
 
 # ==================== CORE TRANSLATION ROUTES ====================
 
+async def log_translation_to_db(data: dict):
+    """Helper to log translation events to a unified collection."""
+    if db is not None:
+        try:
+            # Ensure we don't log sensitive base64 audio
+            log_data = data.copy()
+            log_data.pop("audio_base64", None)
+            await db.translations.insert_one(log_data)
+        except Exception as e:
+            logger.error(f"Unified DB log error: {e}")
+
 @api_router.get("/")
 async def root():
     return {"message": "AIpolyglots Translation API", "status": "active", "version": "2.1"}
@@ -478,36 +493,30 @@ async def health_keep_alive():
 
 
 @api_router.post("/translate", response_model=TranslationResponse)
-async def api_translate_text(request: TranslationRequest):
+async def api_translate_text(request: TranslationRequest, fast_req: Request):
     translated = await translate_text(request.text, request.source_language, request.target_language)
     response = TranslationResponse(
         original_text=request.text, translated_text=translated,
-        source_language=request.source_language, target_language=request.target_language
+        source_language=request.source_language, target_language=request.target_language,
+        channel="web",
+        user_identifier=fast_req.client.host if fast_req.client else "unknown"
     )
-    if db is not None:
-        try:
-            await db.translations.insert_one(response.model_dump())
-        except Exception as e:
-            logger.error(f"Failed to log translation to DB: {e}")
+    await log_translation_to_db(response.model_dump())
     return response
 
 
 @api_router.post("/voice-translate", response_model=VoiceTranslationResponse)
-async def voice_translate(request: VoiceTranslationRequest):
+async def voice_translate(request: VoiceTranslationRequest, fast_req: Request):
     transcribed = await transcribe_audio_demo(request.audio_base64, request.source_language)
     translated = await translate_text(transcribed, request.source_language, request.target_language)
     audio_base64 = await text_to_speech_demo(translated)
     response = VoiceTranslationResponse(
         transcribed_text=transcribed, translated_text=translated, audio_base64=audio_base64,
-        source_language=request.source_language, target_language=request.target_language
+        source_language=request.source_language, target_language=request.target_language,
+        channel="voice",
+        user_identifier=fast_req.client.host if fast_req.client else "unknown"
     )
-    save_doc = response.model_dump()
-    save_doc.pop('audio_base64', None)
-    if db is not None:
-        try:
-            await db.voice_translations.insert_one(save_doc)
-        except Exception as e:
-            logger.error(f"Failed to log voice translation to DB: {e}")
+    await log_translation_to_db(response.model_dump())
     return response
 
 
@@ -649,14 +658,30 @@ async def public_translate(request: WidgetTranslateRequest, x_api_key: str = Hea
     await validate_api_key(x_api_key, required_scope="translate")
     source = request.source_language if request.source_language != "auto" else "auto-detect"
     translated = await translate_text(request.text, source, request.target_language)
-    return {"translated_text": translated, "source_language": request.source_language, "target_language": request.target_language}
+    result = {
+        "translated_text": translated, 
+        "source_language": request.source_language, 
+        "target_language": request.target_language,
+        "channel": "public-api",
+        "user_identifier": fast_req.client.host if fast_req.client else "unknown",
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+    await log_translation_to_db(result)
+    return result
 
 
 @api_router.post("/widget/translate")
-async def widget_translate(request: WidgetTranslateRequest, x_api_key: str = Header(None)):
+async def widget_translate(request: WidgetTranslateRequest, fast_req: Request, x_api_key: str = Header(None)):
     await validate_api_key(x_api_key, required_scope="translate")
     source = request.source_language if request.source_language != "auto" else "auto-detect"
     translated = await translate_text(request.text, source, request.target_language)
+    result = {
+        "translated_text": translated,
+        "channel": "widget",
+        "user_identifier": fast_req.client.host if fast_req.client else "unknown",
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+    await log_translation_to_db(result)
     return {"translated_text": translated}
 
 
@@ -841,10 +866,15 @@ async def n8n_webhook(request: Request, body: N8NWebhookRequest):
                 "source_language": src_lang,
                 "target_language": tgt_lang,
                 "from": body.from_number,
+                "channel": "whatsapp",
+                "user_identifier": body.from_number,
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
+            await log_translation_to_db(result)
+            
             if db is not None:
                 try:
-                    await db.n8n_events.insert_one({**result, "timestamp": datetime.now(timezone.utc).isoformat()})
+                    await db.n8n_events.insert_one(result)
                 except Exception as e:
                     logger.error(f"n8n webhook DB log error: {e}")
             return result

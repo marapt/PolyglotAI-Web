@@ -35,17 +35,17 @@
   - **Why:** Differentiates from free tools. Users can choose speed vs quality.
   - **Effort:** Medium — UI dropdown + backend routing logic.
 
-- [ ] **WhatsApp: Smart Locale & User Memory** *(see WHATSAPP_LOCALE_MEMORY.md)*
-  - **Why:** Removes friction. Auto-detects target language based on user's country code (e.g., `+55` -> Portuguese) and allows persistent MongoDB overrides ("set my language to French").
-  - **Effort:** Medium — MongoDB `user_preferences` collection + Python `phonenumbers` library parsing.
+- [x] **WhatsApp: Smart Locale & User Memory** *(see WHATSAPP_LOCALE_MEMORY.md)*
+  - **Why:** Removes friction. Auto-detects target language based on user's country code (e.g., `+52` -> Portuguese) and allows persistent MongoDB overrides ("set my language to French").
+  - **Status:** ✅ Fixed (Implemented with `phonenumbers` for locale inference and `user_preferences` for memory overrides).
 
 - [ ] **Add translation quality indicator / confidence score**
   - **Why:** Helps users know when to trust the output vs review manually.
   - **Effort:** Medium — can be approximated using back-translation comparison.
 
-- [ ] **Persist translation history per user (MongoDB)**
+- [x] **Persist translation history per user (MongoDB)**
   - **Why:** Lets users revisit past translations without re-submitting.
-  - **Effort:** Low — MongoDB collection + history endpoint already stubbed in `server.py`.
+  - **Status:** ✅ Fixed (Unified `translations` collection implemented for Web, WhatsApp, and Voice channels).
 
 - [ ] **Add character/word count and cost estimator**
   - **Why:** Transparency about cost before submitting (especially important once paid engines are live).
