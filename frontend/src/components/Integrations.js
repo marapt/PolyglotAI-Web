@@ -335,9 +335,26 @@ print(response.json()["translated_text"])
             <h3 className="text-base font-bold mb-1 flex items-center gap-2">
               <WhatsappLogo size={18} weight="fill" className="text-green-600" /> WhatsApp Translation Bot
             </h3>
-            <p className="text-xs text-[var(--muted)] mb-3">
+            <p className="text-xs text-[var(--muted)] mb-4">
               Powered by <strong>n8n workflow automation</strong> + Twilio. Send any message to the bot and get an instant translation reply.
             </p>
+
+            {/* ── CTA: Try it now ── */}
+            <div className="bg-green-600 rounded-2xl p-5 mb-4 text-white text-center">
+              <p className="text-sm font-bold mb-1">Try AI Polyglots on WhatsApp</p>
+              <p className="text-xs opacity-80 mb-3">Send any text in any language — get an instant translation back</p>
+              <a
+                href="https://wa.me/14155238886?text=Hello"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-white text-green-700 font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-green-50 transition-colors"
+              >
+                <WhatsappLogo size={16} weight="fill" /> Open in WhatsApp
+              </a>
+              <p className="text-[10px] opacity-60 mt-3">
+                ⚠️ Sandbox mode: First, send <code className="bg-green-700 px-1 rounded">join subject-birth</code> to connect
+              </p>
+            </div>
 
             {/* Clarification: WhatsApp vs Twilio */}
             <div className="flex items-start gap-2 p-3 rounded-xl bg-blue-50 border border-blue-200 mb-4">
