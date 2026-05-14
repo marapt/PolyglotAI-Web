@@ -33,7 +33,7 @@ Environment (optional — tests still run without these, just with warnings):
 #
 # BASIC USAGE — Auto-translate to English:
 #   1. Save the AI Polyglots WhatsApp number to your contacts
-#      (e.g. +1 415 555 1234 — the Twilio number)
+#      (e.g. +1 415 523 8886 — the Twilio number)
 #   2. Send any message in any language:
 #      → "Bonjour, comment ça va?"
 #   3. The AI Polyglots bot replies with the English translation:
@@ -88,7 +88,7 @@ import time
 
 # ==================== CONFIG ====================
 
-BACKEND_URL = os.environ.get("BACKEND_URL", "https://aipolyglots-api.onrender.com")
+BACKEND_URL = os.environ.get("BACKEND_URL", "https://aipolyglots-backend.onrender.com")
 N8N_WEBHOOK_URL = os.environ.get("N8N_WEBHOOK_URL", "https://aipolyglots.app.n8n.cloud/webhook/n8n")
 N8N_WEBHOOK_SECRET = os.environ.get("N8N_WEBHOOK_SECRET", "aipolyglots-n8n-2026")
 
