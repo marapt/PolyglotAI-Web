@@ -50,6 +50,7 @@ MYMEMORY_API = "https://api.mymemory.translated.net/get"
 # OpenAI Configuration
 openai_client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini") # Cost-effective and high quality
+DISABLE_PAID_ENGINES = os.environ.get("DISABLE_PAID_ENGINES", "true").lower() == "true" # Default to ZERO COST
 
 
 
@@ -314,8 +315,8 @@ async def translate_with_openai(text: str, source_lang: str, target_lang: str) -
 
 async def translate_text(text: str, source_lang: str, target_lang: str) -> str:
     """Unified translation entry point with multi-tier fallbacks."""
-    # Tier 1: OpenAI (Premium Quality, Low Cost)
-    if openai_client.api_key:
+    # Tier 1: OpenAI (Premium Quality, Low Cost) - ONLY used if explicitly enabled
+    if not DISABLE_PAID_ENGINES and openai_client.api_key:
         try:
             return await translate_with_openai(text, source_lang, target_lang)
         except Exception:

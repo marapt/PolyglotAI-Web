@@ -20,6 +20,7 @@
 - [x] **Upgrade translation engine from MyMemory → OpenAI (gpt-4o-mini)**
   - **Why:** MyMemory has a 500 char/req limit and inconsistent quality on technical content.
   - **Status:** ✅ Fixed (OpenAI gpt-4o-mini integrated as Tier 1, with MyMemory/LibreTranslate as fallbacks).
+  - **Safety:** 🛡️ Added `DISABLE_PAID_ENGINES` toggle (defaults to `true`). You must explicitly enable this in Render to use OpenAI, ensuring zero unexpected costs.
 
 - [x] **Harden `/api/translate` error handling**
   - **Why:** Backend occasionally returns 500 errors, causing CORS failures visible to users.
