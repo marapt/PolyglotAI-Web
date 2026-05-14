@@ -131,16 +131,16 @@ Three options for securing the n8n → AI Polyglots backend connection:
 - [x] Branch tracking on remote (`git push -u origin feature/n8n-integration`)
 
 ### 1.1 Generic n8n Webhook Endpoint
-- [ ] Add `POST /api/webhooks/n8n` to `server.py`
+- [x] Add `POST /api/webhooks/n8n` to `server.py`
   - Accept JSON with `action` field: `"translate"`, `"voice-translate"`, `"sign-to-text"`
   - Route to correct handler based on `action`
   - Return JSON result to n8n
 
 ### 1.2 API Key Security (Option A)
-- [ ] Add `X-N8N-API-Key` header check to the new endpoint
-- [ ] Read `N8N_WEBHOOK_SECRET` from environment variable
-- [ ] Return `403 Forbidden` if header missing or doesn't match
-- [ ] Add `N8N_WEBHOOK_SECRET` to Render dashboard environment variables
+- [x] Add `X-N8N-API-Key` header check to the new endpoint
+- [x] Read `N8N_WEBHOOK_SECRET` from environment variable
+- [x] Return `403 Forbidden` if header missing or doesn't match
+- [x] Add `N8N_WEBHOOK_SECRET` to Render dashboard environment variables
 
 ### 1.3 CORS Update
 - [ ] Add n8n cloud domain to CORS allowed origins
@@ -238,35 +238,35 @@ Three options for securing the n8n → AI Polyglots backend connection:
 > This is the full human test. Run this AFTER all automated tests pass.
 
 **Pre-requisites:**
-- [ ] Twilio sandbox or production number is active
-- [ ] Twilio WhatsApp webhook URL is set to `https://aipolyglots.app.n8n.cloud/webhook/n8n`
-- [ ] n8n workflow is activated (toggle ON in n8n dashboard)
-- [ ] Render is running the `feature/n8n-integration` build
+- [x] Twilio sandbox or production number is active
+- [x] Twilio WhatsApp webhook URL is set to `https://aipolyglots.app.n8n.cloud/webhook/n8n`
+- [x] n8n workflow is activated (toggle ON in n8n dashboard)
+- [x] Render is running the `feature/n8n-integration` build
 
 **Test as a real user:**
 
-- [ ] **Basic auto-translate (→ English)**
+- [x] **Basic auto-translate (→ English)**
   1. Save the Twilio WhatsApp number to contacts on your personal phone
   2. Open WhatsApp and send: `Bonjour, comment ça va?`
   3. ✅ Expected reply: `Hello, how are you?` (or similar English translation)
 
-- [ ] **Targeted language translation**
+- [x] **Targeted language translation**
   1. Send: `/to es Good morning, my name is Mara`
   2. ✅ Expected reply: `Buenos días, me llamo Mara`
 
-- [ ] **Multi-word message with numbers/symbols**
+- [x] **Multi-word message with numbers/symbols**
   1. Send: `/to fr My order #12345 arrives on Monday at 3pm`
   2. ✅ Expected reply contains French translation with number preserved
 
-- [ ] **Empty message handling**
+- [x] **Empty message handling**
   1. Send a blank message or just spaces
   2. ✅ Expected: bot replies with usage instructions (not a crash)
 
-- [ ] **Unknown language code**
+- [x] **Unknown language code**
   1. Send: `/to zz Hello`
   2. ✅ Expected: graceful error message, not a 500
 
-- [ ] **Verify end-to-end latency**
+- [x] **Verify end-to-end latency**
   - Note time from send → reply received
   - ✅ Acceptable: under 10 seconds
   - ⚠️ Flag if over 15 seconds (Render cold start issue)

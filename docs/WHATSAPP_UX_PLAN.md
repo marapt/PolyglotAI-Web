@@ -28,7 +28,7 @@
 📋 CODES: es fr de pt ja zh ar hi ko it ru
 Type /help anytime.
 ```
-**Location:** n8n workflow | **Effort:** ~15 mins
+**Location:** `backend/server.py` | **Effort:** ~15 mins
 
 ---
 
@@ -54,7 +54,7 @@ Type /help anytime.
 ```
 I didn't receive any text. Send me a message in any language to translate it!
 ```
-**Location:** n8n workflow | **Effort:** ~10 mins
+**Location:** `backend/server.py` | **Effort:** ~10 mins
 
 ---
 
@@ -73,12 +73,13 @@ I didn't receive any text. Send me a message in any language to translate it!
 ## 🟡 External / Deferred
 
 ### Problem 5: Twilio Sandbox "join" barrier
-- **Real fix:** Apply for Twilio WhatsApp Business number (Meta verification, 1–7 days)
+- **Real fix:** Apply for Twilio WhatsApp Business number (Meta verification, 1–7 days). This completely eliminates the need for users to text the clunky `join subject-birth` code, creating a true "Just click the link and start typing" flow.
 - **Workaround:** Make join step discoverable on the website (Problem 4 helps)
 
 ### Problem 6: No user memory / language preference
-- Store `from_number → preferred_target_language` in MongoDB
-- Example: "set language to Spanish" → all future messages auto-translate to Spanish
+- **What it is:** Adding MongoDB storage so the bot remembers the user's preferred language based on their WhatsApp phone number (`from_number`).
+- **Why it matters:** Currently, the bot translates everything to English by default unless you explicitly say `/to es`. With User Memory, a user could say "Translate everything to Spanish from now on," and the bot will remember that preference for all future messages.
+- **Next Step:** Connect the MongoDB cluster and implement a `user_preferences` collection in `server.py` to store and retrieve language targets based on the `from_number` field.
 - **Effort:** ~1 hr | **Dependency:** MongoDB must be connected
 
 ---
@@ -86,10 +87,10 @@ I didn't receive any text. Send me a message in any language to translate it!
 ## ✅ Build Order
 
 ```
-[ ] Fix 3: Empty message handling   → n8n         (10 min)
-[ ] Fix 1: Welcome message          → n8n         (15 min)
-[ ] Fix 2: Natural language parsing → backend     (30 min)
-[ ] Fix 4: Website QR/button        → frontend    (20 min)
+[x] Fix 3: Empty message handling   → backend     (10 min)
+[x] Fix 1: Welcome message          → backend     (15 min)
+[x] Fix 2: Natural language parsing → backend     (30 min)
+[x] Fix 4: Website QR/button        → frontend    (20 min)
 ─────────────────────────────────────────────────────────
 [ ] Fix 5: Production number        → external
 [ ] Fix 6: User memory              → backend + DB (60 min)
@@ -99,4 +100,6 @@ I didn't receive any text. Send me a message in any language to translate it!
 ---
 
 ## 🎯 After Fixes → Ideal User Journey
-To be designed once all 4 immediate fixes are live.
+✅ **COMPLETED:** The ideal user journey and the overarching product strategy (including the "Bring Your Own Phone" framing and the potential for a Relay/Proxy Model) have been fully designed and documented. 
+
+👉 **See:** [`WHATSAPP_STRATEGY.md`](./WHATSAPP_STRATEGY.md) for the complete breakdown.
