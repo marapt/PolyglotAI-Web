@@ -92,8 +92,9 @@ I didn't receive any text. Send me a message in any language to translate it!
 [x] Fix 2: Natural language parsing → backend     (30 min)
 [x] Fix 4: Website QR/button        → frontend    (20 min)
 ─────────────────────────────────────────────────────────
-[ ] Fix 5: Production number        → external
-[ ] Fix 6: User memory              → backend + DB (60 min)
+[x] Fix 5: Production number        → external (Application Pending)
+[x] Fix 6: User memory              → backend + DB (60 min)
+[x] Fix 7: Engine Upgrade           → OpenAI Integration (30 min)
 ```
 **Total for immediate fixes: ~75 mins**
 
