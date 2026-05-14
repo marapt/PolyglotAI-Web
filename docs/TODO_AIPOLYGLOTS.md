@@ -65,7 +65,9 @@
 
 - [ ] **n8n Email translation pipeline**
 - [ ] **n8n Slack bot**
-- [ ] **n8n Health Monitor**
+- [x] **n8n Health Monitor**
+  - **Why:** Prevents Render cold starts.
+  - **Status:** ✅ Endpoint `/api/health/keep-alive` implemented. Documentation created in `N8N_HEALTH_MONITOR.md`.
 - [ ] **n8n Batch translation job**
 
 - [x] **Update https://aipolyglots.com website content to reflect new channels**

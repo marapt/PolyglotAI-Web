@@ -467,9 +467,18 @@ async def validate_api_key(api_key: str, required_scope: str = "translate") -> d
 async def root():
     return {"message": "AIpolyglots Translation API", "status": "active", "version": "2.1"}
 
+@api_router.get("/health/keep-alive")
+async def health_keep_alive():
+    """Specific endpoint for n8n cron pings to prevent Render cold starts."""
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "mode": "premium" if not DISABLE_PAID_ENGINES else "standard"
+    }
+
 
 @api_router.post("/translate", response_model=TranslationResponse)
-async def translate_text(request: TranslationRequest):
+async def api_translate_text(request: TranslationRequest):
     translated = await translate_text(request.text, request.source_language, request.target_language)
     response = TranslationResponse(
         original_text=request.text, translated_text=translated,
