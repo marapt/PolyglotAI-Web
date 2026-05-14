@@ -178,20 +178,28 @@ async def translate_with_mymemory(text: str, source_lang: str, target_lang: str)
         except Exception as e:
             logger.warning(f"MyMemory failed: {e}, trying fallback...")
 
-        # --- Fallback: LibreTranslate (Argos open instance) ---
-        try:
-            src_lt = "auto" if src == "autodetect" else src
-            r = await client.post(LIBRETRANSLATE_API, json={
-                "q": text, "source": src_lt, "target": target_lang, "format": "text"
-            })
-            r.raise_for_status()
-            translated = r.json().get("translatedText", "")
-            if translated:
-                return translated
-        except Exception as e:
-            logger.error(f"LibreTranslate fallback also failed: {e}")
+        # --- Fallback: LibreTranslate (multiple public instances) ---
+        for lt_api in [
+            "https://libretranslate.com/translate",
+            "https://translate.argosopentech.com/translate",
+            "https://translate.terraprint.co/translate",
+        ]:
+            try:
+                src_lt = "auto" if src == "autodetect" else src
+                r = await client.post(lt_api, json={
+                    "q": text, "source": src_lt, "target": target_lang, "format": "text"
+                })
+                r.raise_for_status()
+                translated = r.json().get("translatedText", "")
+                if translated:
+                    return translated
+            except Exception as e:
+                logger.warning(f"LibreTranslate instance {lt_api} failed: {e}")
+                continue
 
-    raise HTTPException(status_code=502, detail="Translation services temporarily unavailable. Please try again shortly.")
+    # Last resort: return original text with a note rather than crashing
+    logger.error("All translation services failed — returning original text")
+    return f"[Translation unavailable] {text}"
 
 
 async def transcribe_audio_demo(audio_base64: str, language: str) -> str:
