@@ -158,6 +158,109 @@ def mask_key(key: str) -> str:
 
 LIBRETRANSLATE_API = "https://translate.argosopentech.com/translate"
 
+# ==================== WHATSAPP MESSAGE PARSER ====================
+
+GREETING_KEYWORDS = {
+    "hi", "hello", "hey", "hola", "help", "start", "?", "info",
+    "bonjour", "ciao", "salut", "hallo", "olá", "привет", "مرحبا",
+}
+
+WHATSAPP_WELCOME = """\
+👋 *Welcome to AI Polyglots!*
+
+I translate messages instantly between 50+ languages.
+
+📌 *HOW TO USE:*
+• Send any text → I translate it to English
+• Pick a target language: `/to [code] [your text]`
+
+🌍 *EXAMPLES:*
+  _Bonjour tout le monde_
+  → Hello everyone
+
+  _/to es Good morning, my name is Mara_
+  → Buenos días, me llamo Mara
+
+  _/to ja Thank you for your patience_
+  → ご辛抱いただきありがとうございます
+
+📋 *COMMON CODES:*
+es · fr · de · pt · ja · zh · ar · hi · ko · it · ru
+
+Type */help* anytime to see this message again."""
+
+# Map of common language names → ISO codes (for natural-language targeting)
+LANG_NAME_MAP = {
+    "spanish": "es", "español": "es", "espanol": "es",
+    "french": "fr", "français": "fr", "francais": "fr",
+    "german": "de", "deutsch": "de",
+    "portuguese": "pt", "português": "pt",
+    "japanese": "ja", "日本語": "ja",
+    "chinese": "zh", "mandarin": "zh", "中文": "zh",
+    "arabic": "ar", "عربي": "ar",
+    "hindi": "hi", "हिन्दी": "hi",
+    "korean": "ko", "한국어": "ko",
+    "italian": "it", "italiano": "it",
+    "russian": "ru", "русский": "ru",
+    "english": "en",
+}
+
+import re as _re
+
+def parse_whatsapp_message(raw: str) -> tuple[str, str, str]:
+    """
+    Parse a raw WhatsApp message into (text, source_language, target_language).
+
+    Supported patterns (all case-insensitive):
+      /to es Hello world
+      translate to Spanish: Hello world
+      Hello world → Spanish
+      Hello world [es]
+      Hello world (no target) → translate to English
+    """
+    text = raw.strip()
+    src = "auto-detect"
+    tgt = "en"
+
+    # --- Pattern 1: /to [lang_code_or_name] [text] ---
+    m = _re.match(r"^/to\s+(\w+)\s+(.+)$", text, _re.IGNORECASE | _re.DOTALL)
+    if m:
+        lang_raw, body = m.group(1).lower(), m.group(2).strip()
+        tgt = LANG_NAME_MAP.get(lang_raw, lang_raw)
+        return body, src, tgt
+
+    # --- Pattern 2: translate to [lang]: [text] ---
+    m = _re.match(r"^translate\s+to\s+(\w+)\s*[:\-]\s*(.+)$", text, _re.IGNORECASE | _re.DOTALL)
+    if m:
+        lang_raw, body = m.group(1).lower(), m.group(2).strip()
+        tgt = LANG_NAME_MAP.get(lang_raw, lang_raw)
+        return body, src, tgt
+
+    # --- Pattern 3: [text] → [lang] ---
+    m = _re.match(r"^(.+?)\s*[→>]\s*(\w+)$", text, _re.DOTALL)
+    if m:
+        body, lang_raw = m.group(1).strip(), m.group(2).lower()
+        tgt = LANG_NAME_MAP.get(lang_raw, lang_raw)
+        return body, src, tgt
+
+    # --- Pattern 4: [text] [es] (bracket notation) ---
+    m = _re.match(r"^(.+?)\s+\[(\w{2,3})\]$", text, _re.DOTALL)
+    if m:
+        body, lang_raw = m.group(1).strip(), m.group(2).lower()
+        tgt = LANG_NAME_MAP.get(lang_raw, lang_raw)
+        return body, src, tgt
+
+    # --- Default: no target specified → translate to English ---
+    return text, src, tgt
+
+
+def is_greeting(text: str) -> bool:
+    """Return True if the message is a greeting/help request rather than text to translate."""
+    cleaned = text.strip().lower().rstrip("!.,?")
+    return cleaned in GREETING_KEYWORDS or cleaned in {"/help", "/start", "/info"}
+
+
+
 async def translate_with_mymemory(text: str, source_lang: str, target_lang: str) -> str:
     """Translate text using MyMemory (primary) with LibreTranslate fallback. Both free, no key required."""
     src = "autodetect" if source_lang in ("auto", "auto-detect", "autodetect") else source_lang
@@ -577,15 +680,45 @@ async def n8n_webhook(request: Request, body: N8NWebhookRequest):
 
         # --- Route: Text Translation ---
         if action == "translate":
-            if not body.text:
-                raise HTTPException(status_code=400, detail="'text' field is required for action=translate")
-            translated = await translate_with_mymemory(body.text, body.source_language, body.target_language)
+            raw_text = (body.text or "").strip()
+
+            # Empty message → return help prompt
+            if not raw_text:
+                return {
+                    "action": "translate",
+                    "translated_text": "I didn't receive any text. Send me a message in any language and I'll translate it!\n\nType *hi* or */help* for usage instructions.",
+                    "original_text": "",
+                    "source_language": "auto-detect",
+                    "target_language": "en",
+                    "from": body.from_number,
+                }
+
+            # Greeting / help request → return welcome message
+            if is_greeting(raw_text):
+                return {
+                    "action": "translate",
+                    "translated_text": WHATSAPP_WELCOME,
+                    "original_text": raw_text,
+                    "source_language": "auto-detect",
+                    "target_language": "en",
+                    "from": body.from_number,
+                }
+
+            # Parse natural language patterns → extract text + target language
+            parsed_text, src_lang, tgt_lang = parse_whatsapp_message(raw_text)
+            # Allow explicit overrides from n8n body fields if set
+            if body.source_language and body.source_language not in ("auto-detect", "auto", "autodetect"):
+                src_lang = body.source_language
+            if body.target_language and body.target_language not in ("en", ""):
+                tgt_lang = body.target_language
+
+            translated = await translate_with_mymemory(parsed_text, src_lang, tgt_lang)
             result = {
                 "action": "translate",
-                "original_text": body.text,
+                "original_text": parsed_text,
                 "translated_text": translated,
-                "source_language": body.source_language,
-                "target_language": body.target_language,
+                "source_language": src_lang,
+                "target_language": tgt_lang,
                 "from": body.from_number,
             }
             if db is not None:
@@ -594,6 +727,7 @@ async def n8n_webhook(request: Request, body: N8NWebhookRequest):
                 except Exception as e:
                     logger.error(f"n8n webhook DB log error: {e}")
             return result
+
 
         # --- Route: Voice Translation ---
         elif action == "voice-translate":
