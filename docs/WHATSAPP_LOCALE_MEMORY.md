@@ -26,23 +26,23 @@ Instead of defaulting to English for everyone, the system will use a two-tier hi
 ## 🛠️ Implementation Steps
 
 ### Phase 1: Number Parsing & Country Defaulting
-- [ ] Install `phonenumbers` Python library (`pip install phonenumbers`).
-- [ ] Create a `utils/locale_helper.py` utility to:
+- [x] Install `phonenumbers` Python library (`pip install phonenumbers`).
+- [x] Create a `utils/locale_helper.py` utility to:
   - Parse the E.164 `from_number` string (e.g., `whatsapp:+525512345678`).
   - Extract the ISO country code (e.g., `MX`).
   - Map the country code to a target language code (e.g., `es`).
-- [ ] Integrate the fallback logic into the `parse_whatsapp_message` routing in `server.py`.
+- [x] Integrate the fallback logic into the `parse_whatsapp_message` routing in `server.py`.
 
 ### Phase 2: MongoDB User Memory (Overrides)
-- [ ] Create a `user_preferences` collection in the MongoDB database.
-- [ ] Add natural language detection for setting preferences (e.g., "set my language to French", "always translate to German").
-- [ ] Write logic to upsert `from_number -> target_language` into MongoDB when a user sets a preference.
-- [ ] Update the translation route to query MongoDB first before relying on the Country Code default.
+- [x] Create a `user_preferences` collection in the MongoDB database.
+- [x] Add natural language detection for setting preferences (e.g., "set my language to French", "always translate to German").
+- [x] Write logic to upsert `from_number -> target_language` into MongoDB when a user sets a preference.
+- [x] Update the translation route to query MongoDB first before relying on the Country Code default.
 
 ### Phase 3: Testing & Edge Cases
-- [ ] Write unit tests for the `locale_helper.py` mapping (testing various country prefixes).
-- [ ] Ensure the welcome message (`is_greeting`) still triggers normally.
-- [ ] Update the welcome message text to inform the user what their detected default language is (e.g., "I'll translate messages to Spanish based on your number. You can change this anytime...").
+- [x] Write unit tests for the `locale_helper.py` mapping (testing various country prefixes).
+- [x] Ensure the welcome message (`is_greeting`) still triggers normally.
+- [x] Update the welcome message text to inform the user what their detected default language is (e.g., "I'll translate messages to Spanish based on your number. You can change this anytime...").
 
 ---
 

@@ -203,11 +203,20 @@ LANG_NAME_MAP = {
     "italian": "it", "italiano": "it",
     "russian": "ru", "русский": "ru",
     "english": "en",
-}
-
 import re as _re
+from utils.locale_helper import get_default_language_for_number
 
-def parse_whatsapp_message(raw: str) -> tuple[str, str, str]:
+def is_setting_preference(text: str) -> str | None:
+    """Check if the user is trying to set a default language."""
+    text = text.strip().lower()
+    # Match patterns like: "set language to spanish", "set default to fr", "/set es"
+    m = _re.match(r"^(?:set language to|set default to|/set)\s+(\w+)$", text)
+    if m:
+        lang_raw = m.group(1)
+        return LANG_NAME_MAP.get(lang_raw, lang_raw)
+    return None
+
+def parse_whatsapp_message(raw: str, from_number: str = "", user_pref: str = None) -> tuple[str, str, str]:
     """
     Parse a raw WhatsApp message into (text, source_language, target_language).
 
@@ -216,11 +225,11 @@ def parse_whatsapp_message(raw: str) -> tuple[str, str, str]:
       translate to Spanish: Hello world
       Hello world → Spanish
       Hello world [es]
-      Hello world (no target) → translate to English
+      Hello world (no target) → translate to Smart Locale
     """
     text = raw.strip()
     src = "auto-detect"
-    tgt = "en"
+    tgt = "en"  # Temporary init, overwritten later
 
     # --- Pattern 1: /to [lang_code_or_name] [text] ---
     m = _re.match(r"^/to\s+(\w+)\s+(.+)$", text, _re.IGNORECASE | _re.DOTALL)
@@ -250,8 +259,15 @@ def parse_whatsapp_message(raw: str) -> tuple[str, str, str]:
         tgt = LANG_NAME_MAP.get(lang_raw, lang_raw)
         return body, src, tgt
 
-    # --- Default: no target specified → translate to English ---
-    return text, src, tgt
+    # --- Default: no target specified → translate to User Pref or Smart Locale ---
+    if user_pref:
+        fallback_tgt = user_pref
+    elif from_number:
+        fallback_tgt = get_default_language_for_number(from_number)
+    else:
+        fallback_tgt = "en"
+        
+    return text, src, fallback_tgt
 
 
 def is_greeting(text: str) -> bool:
@@ -695,17 +711,64 @@ async def n8n_webhook(request: Request, body: N8NWebhookRequest):
 
             # Greeting / help request → return welcome message
             if is_greeting(raw_text):
+                # Query default language to show in welcome message
+                user_pref = None
+                if db is not None:
+                    try:
+                        pref_doc = await db.user_preferences.find_one({"from_number": body.from_number})
+                        if pref_doc:
+                            user_pref = pref_doc.get("target_language")
+                    except Exception:
+                        pass
+                
+                default_lang = user_pref or get_default_language_for_number(body.from_number)
+                if default_lang == "en":
+                    default_lang = "en (English)"
+                    
+                dynamic_welcome = WHATSAPP_WELCOME + f"\n\n⚙️ *Current Default Language:* {default_lang.upper()}\n_(Change it by saying: 'set language to Spanish', etc.)_"
+                
                 return {
                     "action": "translate",
-                    "translated_text": WHATSAPP_WELCOME,
+                    "translated_text": dynamic_welcome,
                     "original_text": raw_text,
                     "source_language": "auto-detect",
                     "target_language": "en",
                     "from": body.from_number,
                 }
 
+            # Check if setting preference
+            pref_lang = is_setting_preference(raw_text)
+            if pref_lang:
+                if db is not None:
+                    try:
+                        await db.user_preferences.update_one(
+                            {"from_number": body.from_number},
+                            {"$set": {"target_language": pref_lang, "updated_at": datetime.now(timezone.utc).isoformat()}},
+                            upsert=True
+                        )
+                    except Exception as e:
+                        logger.error(f"Failed to save user preference: {e}")
+                return {
+                    "action": "translate",
+                    "translated_text": f"✅ Your default language has been set to: {pref_lang.upper()}",
+                    "original_text": raw_text,
+                    "source_language": "auto-detect",
+                    "target_language": "en",
+                    "from": body.from_number,
+                }
+
+            # Query User Memory for default language
+            user_pref = None
+            if db is not None:
+                try:
+                    pref_doc = await db.user_preferences.find_one({"from_number": body.from_number})
+                    if pref_doc:
+                        user_pref = pref_doc.get("target_language")
+                except Exception as e:
+                    logger.error(f"Failed to read user preference: {e}")
+
             # Parse natural language patterns → extract text + target language
-            parsed_text, src_lang, tgt_lang = parse_whatsapp_message(raw_text)
+            parsed_text, src_lang, tgt_lang = parse_whatsapp_message(raw_text, from_number=body.from_number, user_pref=user_pref)
             # Allow explicit overrides from n8n body fields if set
             if body.source_language and body.source_language not in ("auto-detect", "auto", "autodetect"):
                 src_lang = body.source_language
