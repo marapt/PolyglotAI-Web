@@ -29,10 +29,10 @@
   - **Recommendation:** Use existing `OPENAI_API_KEY` with GPT-3.5-turbo. Already installed, near-zero cost at low volume, vastly better quality.
   - **Status:** ⏳ Deferred — doing n8n channel integration first per decision 2026-05-13.
 
-- [ ] **Harden `/api/translate` error handling**
+- [x] **Harden `/api/translate` error handling**
   - **Why:** Backend occasionally returns 500 errors, causing CORS failures visible to users.
   - **Effort:** Low — try/except wrappers already partially added; needs completion + fallback message.
-  - **Status:** Partially done (startup_db hardened). Translate endpoint needs same treatment.
+  - **Status:** ✅ Fixed (db truthiness bug resolved, LibreTranslate fallback logic implemented).
 
 ---
 
@@ -58,16 +58,16 @@
 
 ## 🟢 Growth / Distribution (Do After Core Is Solid)
 
-- [~] **n8n WhatsApp workflow** *(see N8N_INTEGRATION_PLAN.md)*
+- [x] **n8n WhatsApp workflow** *(see N8N_INTEGRATION_PLAN.md)*
   - **Why:** Fixes broken WhatsApp integration. Expands reach to mobile-first users.
-  - **Status:** Workflow built in n8n, backend endpoint coded. Awaiting Render deploy + Twilio URL update.
+  - **Status:** ✅ Fully LIVE. Webhook running via n8n, rendering natural language parser & custom welcome message.
 
 - [ ] **n8n Email translation pipeline**
 - [ ] **n8n Slack bot**
 - [ ] **n8n Health Monitor**
 - [ ] **n8n Batch translation job**
 
-- [ ] **Update https://aipolyglots.com website content to reflect new channels**
+- [x] **Update https://aipolyglots.com website content to reflect new channels**
   - **Trigger:** Do this AFTER n8n WhatsApp + at least one other channel is fully live and tested
   - **What to update:**
     - Hero section: add WhatsApp as an access method (with phone number / QR code)
@@ -76,7 +76,7 @@
     - Add a dedicated "Get Started on WhatsApp" CTA with the Twilio number
     - Footer: add WhatsApp contact link
   - **Effort:** Medium — frontend-only changes, no backend needed
-  - **Files to edit:** `frontend/src/` components (likely `App.jsx` or equivalent)
+  - **Status:** ✅ Added WhatsApp try-it button with BYOP (Bring Your Own Phone) framing to `Integrations.js`.
 
 ---
 
