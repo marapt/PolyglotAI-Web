@@ -354,7 +354,11 @@ print(response.json()["translated_text"])
               <p className="text-[10px] opacity-60 mt-3">
                 Uses your existing WhatsApp — no new account needed
               </p>
+              <p className="text-[10px] opacity-40 mt-1">
+                🧪 Demo mode: first-time users send <code className="bg-green-700 px-1 rounded">join subject-birth</code> to activate
+              </p>
             </div>
+
 
             {/* Clarification: BYOP model */}
             <div className="flex items-start gap-2 p-3 rounded-xl bg-blue-50 border border-blue-200 mb-4">
