@@ -299,7 +299,7 @@ async def translate_text(request: TranslationRequest):
         original_text=request.text, translated_text=translated,
         source_language=request.source_language, target_language=request.target_language
     )
-    if db:
+    if db is not None:
         try:
             await db.translations.insert_one(response.model_dump())
         except Exception as e:
@@ -318,7 +318,7 @@ async def voice_translate(request: VoiceTranslationRequest):
     )
     save_doc = response.model_dump()
     save_doc.pop('audio_base64', None)
-    if db:
+    if db is not None:
         try:
             await db.voice_translations.insert_one(save_doc)
         except Exception as e:
@@ -330,7 +330,7 @@ async def voice_translate(request: VoiceTranslationRequest):
 async def sign_to_text(request: SignLanguageRequest):
     interpreted = await interpret_sign_language_demo(request.image_base64, request.target_language)
     response = SignLanguageResponse(interpreted_text=interpreted, target_language=request.target_language)
-    if db:
+    if db is not None:
         try:
             await db.sign_interpretations.insert_one(response.model_dump())
         except Exception as e:
@@ -342,7 +342,7 @@ async def sign_to_text(request: SignLanguageRequest):
 async def text_to_sign(request: TextToSignRequest):
     description = await generate_sign_description(request.text, request.sign_language)
     response = TextToSignResponse(text=request.text, sign_description=description, sign_language=request.sign_language)
-    if db:
+    if db is not None:
         try:
             await db.text_to_sign.insert_one(response.model_dump())
         except Exception as e:
@@ -421,7 +421,7 @@ async def generate_api_key(request: ApiKeyCreate):
         "last_used": None,
         "active": True
     }
-    if db:
+    if db is not None:
         await db.api_keys.insert_one(doc)
     else:
         logger.warning(f"Demo Key Generated (not persisted): {raw_key}")
@@ -580,7 +580,7 @@ async def n8n_webhook(request: Request, body: N8NWebhookRequest):
                 "target_language": body.target_language,
                 "from": body.from_number,
             }
-            if db:
+            if db is not None:
                 try:
                     await db.n8n_events.insert_one({**result, "timestamp": datetime.now(timezone.utc).isoformat()})
                 except Exception as e:
